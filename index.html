@@ -46,7 +46,7 @@ main{display:grid;grid-template-columns:190px 1fr 390px;grid-template-rows:1fr 1
 .f button{border:0;background:none;padding:0 4px;color:var(--dim);cursor:pointer}
 #editor{grid-area:editor;display:flex;flex-direction:column}
 #tab{padding:9px 16px;color:var(--dim);font:12.5px var(--mono);border-bottom:1px solid var(--line);background:var(--panel2)}
-#code{flex:1;width:100%;resize:none;border:0;background:transparent;color:var(--text);padding:14px 16px;font:13px/1.65 var(--mono);tab-size:2;white-space:pre}
+#code{flex:1;min-width:0;resize:none;border:0;background:transparent;color:var(--text);padding:14px 16px;font:var(--fs,13px)/1.65 var(--mono);tab-size:2;white-space:pre}
 #sim{grid-area:sim;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;background-image:radial-gradient(#ffffff14 1px,transparent 1px);background-size:18px 18px}
 .dev{position:relative;background:#fff;overflow:hidden;box-shadow:0 24px 60px #000a;display:flex;flex-direction:column}
 .dev.phone{width:270px;height:550px;border-radius:40px;border:9px solid #07061a}
@@ -65,6 +65,41 @@ main{display:grid;grid-template-columns:190px 1fr 390px;grid-template-rows:1fr 1
 #log div{white-space:pre-wrap}
 .error{color:var(--err)}.warn{color:var(--warn)}.info{color:var(--info)}.ok{color:var(--ok)}.log{color:var(--text)}
 #cmd{border:0;border-top:1px solid var(--line);background:#0b0a1e;padding:8px 14px;font:12.5px var(--mono);width:100%}
+:root[data-th=light]{--bg:#f1f0fb;--panel:#fff;--panel2:#eceaf9;--line:#d6d3ee;--text:#1d1a3f;--dim:#6a65a3}
+:root[data-th=forest]{--bg:#0d1a14;--panel:#12261c;--panel2:#183226;--line:#25503a;--text:#e6f5ec;--dim:#86b79a;--a1:#7be0a0;--a2:#2aa76b}
+:root[data-th=sunset]{--bg:#1f1010;--panel:#2b1717;--panel2:#3a1f1f;--line:#5a3030;--text:#ffeee6;--dim:#d0a090;--a1:#ffb454;--a2:#ff5c5c}
+header{overflow-x:auto}
+header .btn{padding:6px 10px;font-size:13px;white-space:nowrap}
+#ed{flex:1;min-height:0;display:flex}
+#gut{padding:14px 8px 14px 14px;text-align:right;color:var(--dim);overflow:hidden;white-space:pre;user-select:none;font:var(--fs,13px)/1.65 var(--mono);background:var(--panel2)}
+#status{padding:5px 14px;color:var(--dim);font:11.5px var(--mono);border-top:1px solid var(--line);background:var(--panel2)}
+#fbar{display:flex;gap:6px;padding:6px 10px;background:var(--panel2);border-bottom:1px solid var(--line);align-items:center}
+#fbar[hidden]{display:none}
+#fbar input{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 8px;width:130px;color:var(--text)}
+#fbar .btn{padding:3px 10px}
+.tool{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;color:var(--dim);font-size:12px}
+.tool select{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 6px;color:var(--text)}
+.tool .btn{padding:3px 9px}
+.tool input[type=range]{width:80px}
+.dev:fullscreen{width:100%!important;height:100%!important;zoom:1!important;border-radius:0;border:0}
+#ov{position:fixed;inset:0;background:#000a;display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:50}
+#ov[hidden]{display:none}
+#box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;width:min(460px,92vw);max-height:72vh;overflow:auto;box-shadow:0 30px 80px #000a}
+#box h3{margin:0 0 12px}
+#box label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;color:var(--dim)}
+#box input[type=text],#box select,#pq{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:6px 10px;color:var(--text);width:230px}
+#box input[type=color]{width:60px;height:30px;border:0;background:none}
+#box .row{margin-top:16px}
+#pq{width:100%;margin-bottom:8px}
+.pi{padding:8px 10px;border-radius:9px;cursor:pointer}
+.pi:hover,.pi:first-child{background:var(--panel2)}
+#box pre{font:12.5px/1.8 var(--mono);white-space:pre-wrap;margin:0}
+#toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;z-index:60}
+#toasts div{background:var(--panel2);border:1px solid var(--a2);padding:8px 16px;border-radius:20px}
+#errc{color:var(--err);margin-left:10px}
+.focus main{grid-template-columns:1fr 390px;grid-template-rows:1fr;grid-template-areas:"editor sim"}
+.focus #files,.focus #term{display:none}
+@media(max-width:1300px){#saved{display:none}}
 @media(max-width:900px){
  #studio{height:auto;min-height:100%;grid-template-rows:auto 1fr}
  header{flex-wrap:wrap;padding:10px 14px}
@@ -91,26 +126,31 @@ main{display:grid;grid-template-columns:190px 1fr 390px;grid-template-rows:1fr 1
     <button class="btn" id="upBtn">Upload logo</button>
     <span class="sp"></span>
     <span class="tag" id="saved"></span>
-    <button class="btn" id="openBtn">Open project</button>
-    <button class="btn" id="saveBtn">Save project</button>
-    <button class="btn" id="swBtn">Change device</button>
+    <button class="btn" id="palBtn">Commands</button>
+    <button class="btn" id="setBtn">Settings</button>
+    <button class="btn" id="openBtn">Open</button>
+    <button class="btn" id="saveBtn">Save</button>
+    <button class="btn" id="swBtn">Device</button>
     <button class="btn" id="runBtn">Run</button>
     <button class="btn primary" id="expBtn">Export app</button>
   </header>
   <main>
     <aside class="pane" id="files"></aside>
-    <div class="pane" id="editor"><div id="tab"></div><textarea id="code" spellcheck="false" aria-label="Code editor"></textarea></div>
-    <div class="pane" id="sim"><div class="tag" id="simLbl"></div><div class="dev" id="dev"><div class="tb"><i></i><i></i><i></i><span id="tbn"></span></div><iframe id="frame" sandbox="allow-scripts" title="App simulator"></iframe></div></div>
+    <div class="pane" id="editor"><div id="tab"></div><div id="fbar" hidden><input id="fq" placeholder="Find"><input id="fr" placeholder="Replace with"><button class="btn" id="fn">Next</button><button class="btn" id="fa">Replace all</button><button class="btn" id="fx">×</button><span id="fc"></span></div><div id="ed"><div id="gut"></div><textarea id="code" spellcheck="false" aria-label="Code editor"></textarea></div><div id="status"></div></div>
+    <div class="pane" id="sim"><div class="tag" id="simLbl"></div><div class="tool"><select id="szSel" aria-label="Device size"></select><button class="btn" id="rotBtn" title="Rotate">⟳</button><input type="range" id="zoom" min="50" max="130" value="100" aria-label="Zoom"><button class="btn" id="rlBtn" title="Reload">↻</button><button class="btn" id="fsBtn" title="Fullscreen">⛶</button><label><input type="checkbox" id="autoChk" checked> Auto-run</label></div><div class="dev" id="dev"><div class="tb"><i></i><i></i><i></i><span id="tbn"></span></div><iframe id="frame" sandbox="allow-scripts" title="App simulator"></iframe></div></div>
     <div class="pane" id="term">
-      <div class="bar"><span>Terminal</span><button class="btn" id="clrBtn">Clear</button></div>
+      <div class="bar"><span>Terminal<b id="errc"></b></span><span><button class="btn" id="cpBtn">Copy</button> <button class="btn" id="clrBtn">Clear</button></span></div>
       <div id="log"></div>
       <input id="cmd" placeholder="help, run, export, save, files, or any JavaScript to test in the simulator" autocomplete="off" aria-label="Terminal input">
     </div>
   </main>
   <input type="file" id="upFile" accept="image/*" hidden>
   <input type="file" id="prjFile" accept=".appstudio,.json" hidden>
+  <input type="file" id="assetFile" accept="image/*,audio/*,.js,.css,.html,.txt" multiple hidden>
 </section>
 
+<div id="ov" hidden><div id="box"></div></div>
+<div id="toasts"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const $ = s => document.querySelector(s);
@@ -129,7 +169,8 @@ const START = {
  'style.css':'body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fb;color:#1c2033}\nmain{display:grid;place-items:center;gap:12px;min-height:100vh;text-align:center}\nbutton{padding:12px 22px;border:0;border-radius:12px;background:#4f46e5;color:#fff;font-size:16px}',
  'app.js':'let taps = 0;\ndocument.getElementById("btn").addEventListener("click", () => {\n  taps++;\n  document.getElementById("out").textContent = "Taps: " + taps;\n  console.log("Tapped " + taps + " times");\n});'
 };
-let S = {plat:null, files:{}, active:'index.html', logo:null, name:'My App'};
+const DS = {ver:'1.0.0', desc:'', author:'', pkg:'', theme:'#7c5cff', bg:'#ffffff', orient:'any', shape:'square', iconBg:'#ffffff', win:'1000x700', splash:true, offline:true};
+let S = {plat:null, files:{}, active:'index.html', logo:null, name:'My App', set:{...DS}, assets:{}};
 let timer;
 
 $('#cards').innerHTML = Object.entries(P).map(([k,p]) =>
@@ -151,21 +192,21 @@ function pick(k){
   $('#studio').style.display = 'grid';
   $('#platTag').textContent = P[k].n;
   $('#simLbl').textContent = P[k].n + ' simulator';
-  $('#dev').className = 'dev ' + P[k].t;
+  $('#dev').className = 'dev ' + P[k].t; fillSizes();
   $('#tbn').textContent = S.name;
   term('info', 'Studio ready for ' + P[k].n + '. Type help for commands.');
   renderFiles(); openFile(S.files[S.active] !== undefined ? S.active : 'index.html'); updateLogo(); run(); persist();
 }
 $('#swBtn').onclick = () => { $('#studio').style.display = 'none'; $('#picker').style.display = 'block'; renderResume(); };
 
-function snap(){ return {v:1, plat:S.plat, name:S.name, logo:S.logo, files:S.files, active:S.active}; }
+function snap(){ return {v:1, plat:S.plat, name:S.name, logo:S.logo, files:S.files, active:S.active, set:S.set, assets:S.assets}; }
 function persist(){
   try { localStorage.setItem(KEY, JSON.stringify(snap())); $('#saved').textContent = 'Saved ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
   catch (e) { $('#saved').textContent = 'Not saved'; }
 }
 function loadProject(p){
   if (!p || !p.files || typeof p.files !== 'object' || !P[p.plat]) throw new Error('This is not a valid App Studio project.');
-  S = {plat:p.plat, files:p.files, active:p.active, logo:p.logo || null, name:p.name || 'My App'};
+  S = {plat:p.plat, files:p.files, active:p.active, logo:p.logo || null, name:p.name || 'My App', set:{...DS, ...p.set}, assets:p.assets || {}};
   $('#appName').value = S.name;
   pick(S.plat);
   term('ok', 'Opened project ' + S.name);
@@ -186,30 +227,6 @@ $('#prjFile').onchange = e => {
   r.readAsText(f); e.target.value = '';
 };
 
-function renderFiles(){
-  $('#files').innerHTML = '<div class="h"><span>Files</span><button id="addF" title="New file">+</button></div>' +
-    Object.keys(S.files).map(f => `<div class="f ${f===S.active?'on':''}" data-f="${f}"><span>${f}</span>${f==='index.html'?'':'<button data-del="'+f+'" title="Delete">×</button>'}</div>`).join('');
-}
-function openFile(f){ S.active = f; $('#code').value = S.files[f] ?? ''; $('#tab').textContent = f; renderFiles(); }
-$('#files').onclick = e => {
-  if (e.target.id === 'addF') {
-    const n = (prompt('File name (for example utils.js or extra.css):') || '').trim();
-    if (!n) return;
-    if (!/^[\w\-.\/]+\.(html|css|js|json|txt|svg)$/i.test(n)) return term('error', 'Invalid name. Use letters, numbers, dashes and one of: .html .css .js .json .txt .svg');
-    if (S.files[n] !== undefined) return term('warn', n + ' already exists.');
-    S.files[n] = ''; openFile(n); persist(); term('ok', 'Created ' + n);
-  } else if (e.target.dataset.del) {
-    const f = e.target.dataset.del;
-    if (confirm('Delete ' + f + '?')) { delete S.files[f]; term('warn', 'Deleted ' + f); openFile('index.html'); persist(); run(); }
-  } else if (e.target.closest('.f')) openFile(e.target.closest('.f').dataset.f);
-};
-$('#code').addEventListener('input', () => { S.files[S.active] = $('#code').value; persist(); clearTimeout(timer); timer = setTimeout(run, 900); });
-$('#code').addEventListener('keydown', e => {
-  if (e.key === 'Tab') { e.preventDefault(); const t = e.target; t.setRangeText('  ', t.selectionStart, t.selectionEnd, 'end'); t.dispatchEvent(new Event('input')); }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveProject(); }
-});
-
 function defaultLogo(){
   const c = document.createElement('canvas'); c.width = c.height = 512;
   const x = c.getContext('2d'), g = x.createLinearGradient(0,0,512,512);
@@ -228,24 +245,13 @@ $('#upFile').onchange = e => {
   r.readAsDataURL(f); e.target.value = '';
 };
 function loadImg(u){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Logo image could not be read')); i.src = u; }); }
-async function draw(size){
-  const i = await loadImg(S.logo || defaultLogo()), c = document.createElement('canvas'), s = Math.min(i.width, i.height);
-  c.width = c.height = size;
-  c.getContext('2d').drawImage(i, (i.width-s)/2, (i.height-s)/2, s, s, 0, 0, size, size);
-  return c;
-}
 async function icon(size){ const c = await draw(size); return new Promise(r => c.toBlob(r, 'image/png')); }
 
 const BRIDGE = '<script>(function(){var s=function(t,a){parent.postMessage({studio:1,t:t,m:a.map(function(x){try{return typeof x==="string"?x:(x&&x.stack)||JSON.stringify(x)}catch(e){return String(x)}}).join(" ")},"*")};["log","warn","error"].forEach(function(k){var o=console[k];console[k]=function(){var a=[].slice.call(arguments);s(k,a);o.apply(console,a)}});onerror=function(m,u,l){s("error",[m+" (line "+l+")"])};onunhandledrejection=function(e){s("error",["Unhandled promise: "+e.reason])};addEventListener("message",function(e){if(e.data&&e.data.ev){try{s("log",["← "+(0,eval)(e.data.ev)])}catch(x){s("error",[x])}}})})()<\/script>';
 
-function inline(){
-  const F = S.files;
-  return F['index.html']
-    .replace(/<link[^>]*href=["']([^"']+)["'][^>]*>/gi, (m, f) => F[f] !== undefined ? '<style>' + F[f] + '</style>' : m)
-    .replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (m, f) => F[f] !== undefined ? '<script>' + F[f].replace(/<\/script/gi, '<\\/script') + '<\/script>' : m);
-}
 function run(){
   clearTimeout(timer);
+  errN = 0; badge();
   const F = S.files;
   if (F['index.html'] === undefined) return term('error', 'index.html is missing. Every app needs one.');
   let ok = true;
@@ -260,60 +266,39 @@ function run(){
 addEventListener('message', e => { if (e.source === $('#frame').contentWindow && e.data && e.data.studio) term(e.data.t, e.data.m); });
 $('#runBtn').onclick = run;
 
-function term(type, msg){
-  const d = document.createElement('div'); d.className = type; d.textContent = msg;
-  $('#log').appendChild(d); $('#log').scrollTop = 1e9;
-}
-$('#clrBtn').onclick = () => $('#log').innerHTML = '';
-$('#cmd').onkeydown = e => {
-  if (e.key !== 'Enter') return;
-  const v = e.target.value.trim(); e.target.value = ''; if (!v) return;
-  term('log', '> ' + v);
-  if (v === 'help') term('info', 'run: restart the simulator\nexport: download the app\nsave: download the project file\nfiles: list project files\nclear: clear this terminal\nanything else runs as JavaScript inside the running app');
-  else if (v === 'run') run();
-  else if (v === 'export') exportApp();
-  else if (v === 'save') saveProject();
-  else if (v === 'clear') $('#log').innerHTML = '';
-  else if (v === 'files') term('log', Object.keys(S.files).join('\n'));
-  else $('#frame').contentWindow.postMessage({ev: v}, '*');
-};
-
 const slug = () => S.name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app';
 const label = () => S.name.replace(/[^\w ]/g, '').trim() || 'App';
 
-async function bundle(extra){
-  const d = (await draw(64)).toDataURL('image/png');
-  const tags = extra + '<link rel="icon" href="' + d + '">';
-  const h = inline();
-  return /<\/head>/i.test(h) ? h.replace(/<\/head>/i, tags + '</head>') : tags + h;
-}
 
-async function exportApp(){
+async function exportApp(parent){
   if (S.files['index.html'] === undefined) return term('error', 'Export stopped: index.html is missing.');
   term('info', 'Building ' + P[S.plat].n + ' app…');
+  if (!parent) health(true);
   try {
-    const id = slug(), pkg = 'com.studio.' + id, z = new JSZip(), r = z.folder(id + '-' + S.plat);
+    const id = slug(), pkg = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$/.test(S.set.pkg) ? S.set.pkg : 'com.studio.' + id, z = parent || new JSZip(), r = z.folder(id + '-' + S.plat), V = S.set.ver || '1.0.0', [WW, WH] = (S.set.win.match(/\d+/g) || [1000, 700]), TH = S.set.theme, OR = {any:'unspecified', portrait:'portrait', landscape:'landscape'}[S.set.orient];
     const put = (p, c, o) => r.file(p, c, o);
-    if (!S.logo) term('warn', 'No logo uploaded. A default letter icon will be used.');
+    put('source/' + id + '.appstudio', JSON.stringify(snap()));
 
     if (S.plat === 'android') {
       put('settings.gradle', 'pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }\ndependencyResolutionManagement { repositories { google(); mavenCentral() } }\nrootProject.name = "' + label() + '"\ninclude ":app"\n');
       put('build.gradle', "plugins {\n  id 'com.android.application' version '8.5.2' apply false\n  id 'org.jetbrains.kotlin.android' version '1.9.24' apply false\n}\n");
       put('gradle.properties', 'org.gradle.jvmargs=-Xmx2g\nandroid.useAndroidX=true\n');
-      put('app/build.gradle', "plugins {\n  id 'com.android.application'\n  id 'org.jetbrains.kotlin.android'\n}\nandroid {\n  namespace '" + pkg + "'\n  compileSdk 34\n  defaultConfig {\n    applicationId '" + pkg + "'\n    minSdk 24\n    targetSdk 34\n    versionCode 1\n    versionName '1.0'\n  }\n  kotlinOptions { jvmTarget = '17' }\n  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }\n}\n");
-      put('app/src/main/AndroidManifest.xml', '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n  <uses-permission android:name="android.permission.INTERNET"/>\n  <application android:label="' + label() + '" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.DeviceDefault.NoActionBar">\n    <activity android:name=".MainActivity" android:exported="true">\n      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>\n    </activity>\n  </application>\n</manifest>\n');
-      put('app/src/main/java/com/studio/' + id + '/MainActivity.kt', 'package ' + pkg + '\n\nimport android.app.Activity\nimport android.os.Bundle\nimport android.webkit.WebView\nimport android.webkit.WebViewClient\n\nclass MainActivity : Activity() {\n  private lateinit var web: WebView\n  override fun onCreate(b: Bundle?) {\n    super.onCreate(b)\n    web = WebView(this)\n    web.settings.javaScriptEnabled = true\n    web.settings.domStorageEnabled = true\n    web.webViewClient = WebViewClient()\n    web.loadUrl("file:///android_asset/www/index.html")\n    setContentView(web)\n  }\n  @Deprecated("Back goes to the previous page first")\n  override fun onBackPressed() { if (web.canGoBack()) web.goBack() else super.onBackPressed() }\n}\n');
-      Object.keys(S.files).forEach(f => put('app/src/main/assets/www/' + f, S.files[f]));
+      put('app/build.gradle', "plugins {\n  id 'com.android.application'\n  id 'org.jetbrains.kotlin.android'\n}\nandroid {\n  namespace '" + pkg + "'\n  compileSdk 34\n  defaultConfig {\n    applicationId '" + pkg + "'\n    minSdk 24\n    targetSdk 34\n    versionCode 1\n    versionName '" + V + "'\n  }\n  kotlinOptions { jvmTarget = '17' }\n  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }\n}\n");
+      put('app/src/main/AndroidManifest.xml', '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n  <uses-permission android:name="android.permission.INTERNET"/>\n  <application android:label="' + label() + '" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.DeviceDefault.NoActionBar">\n    <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="' + OR + '">\n      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>\n    </activity>\n  </application>\n</manifest>\n');
+      put('app/src/main/java/' + pkg.replace(/\./g, '/') + '/MainActivity.kt', 'package ' + pkg + '\n\nimport android.app.Activity\nimport android.os.Bundle\nimport android.webkit.WebView\nimport android.webkit.WebViewClient\n\nclass MainActivity : Activity() {\n  private lateinit var web: WebView\n  override fun onCreate(b: Bundle?) {\n    super.onCreate(b)\n    window.statusBarColor = android.graphics.Color.parseColor(\"' + TH + '\")\n    web = WebView(this)\n    web.settings.javaScriptEnabled = true\n    web.settings.domStorageEnabled = true\n    web.webViewClient = WebViewClient()\n    web.loadUrl("file:///android_asset/www/index.html")\n    setContentView(web)\n  }\n  @Deprecated("Back goes to the previous page first")\n  override fun onBackPressed() { if (web.canGoBack()) web.goBack() else super.onBackPressed() }\n}\n');
+      Object.keys(S.files).forEach(f => { if (f !== 'index.html') put('app/src/main/assets/www/' + f, S.files[f]); });
+      put('app/src/main/assets/www/index.html', await bundle('', true));
+      Object.keys(S.assets).forEach(n => put('app/src/main/assets/www/' + n, S.assets[n].split(',')[1], {base64:true}));
       for (const [d, s] of [['mdpi',48],['hdpi',72],['xhdpi',96],['xxhdpi',144],['xxxhdpi',192]]) put('app/src/main/res/mipmap-' + d + '/ic_launcher.png', await icon(s));
       put('README.md', '# ' + S.name + ' (Android)\n\n1. Install Android Studio.\n2. Choose File > Open and pick this folder. Let Gradle sync.\n3. Plug in a phone or start an emulator, then press Run.\n\nThe app installs with your logo as its icon. Tap the icon to open it.\n');
     }
 
     if (S.plat === 'web' || S.plat === 'ios' || S.plat === 'chromebook') {
       const ios = '<link rel="apple-touch-icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="' + label() + '">';
-      const pwa = '<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#7c5cff">' + ios + '<script>try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}<\/script>';
+      const pwa = '<link rel="manifest" href="manifest.webmanifest">' + ios + (S.set.offline ? '<script>try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}<\/script>' : '');
       put('index.html', await bundle(pwa));
-      put('manifest.webmanifest', JSON.stringify({name:S.name, short_name:S.name.slice(0,12), start_url:'./index.html', display:'standalone', background_color:'#ffffff', theme_color:'#7c5cff', icons:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]}, null, 2));
-      put('sw.js', 'const C="v1",F=' + JSON.stringify(['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png']) + ';\nself.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F))));\nself.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(x=>x||fetch(e.request))));\n');
+      put('manifest.webmanifest', JSON.stringify({name:S.name, short_name:S.name.slice(0,12), start_url:'./index.html', display:'standalone', background_color:S.set.bg, theme_color:TH, orientation:S.set.orient === 'any' ? undefined : S.set.orient, description:S.set.desc || undefined, icons:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]}, null, 2));
+      if (S.set.offline) put('sw.js', 'const C="v1",F=' + JSON.stringify(['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png']) + ';\nself.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F))));\nself.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(x=>x||fetch(e.request))));\n');
       put('icons/icon-192.png', await icon(192)); put('icons/icon-512.png', await icon(512));
       const how = {web:'Double-click index.html. It opens right away in your browser.', chromebook:'Double-click index.html in the Files app to open it in Chrome. To install it, host the folder on GitHub Pages, open the page in Chrome and click the install icon in the address bar.', ios:'Host the folder on GitHub Pages and open the page in Safari. Tap Share, then Add to Home Screen. The app gets your logo and opens full screen.'};
       put('README.md', '# ' + S.name + ' (' + P[S.plat].n + ')\n\n' + how[S.plat] + '\n');
@@ -322,15 +307,16 @@ async function exportApp(){
     if (S.plat === 'mac' || S.plat === 'windows' || S.plat === 'linux') {
       const mac = S.plat === 'mac', win = S.plat === 'windows', nm = label();
       put('app/index.html', await bundle(''));
-      put('package.json', JSON.stringify({name:id, productName:S.name, version:'1.0.0', main:'main.js', scripts:{start:'electron .', build:'electron-builder'}, devDependencies:{electron:'^31.0.0','electron-builder':'^24.13.3'}, build:{appId:pkg, productName:S.name, files:['main.js','app/**','icon.png'], icon:'icon.png', [mac?'mac':win?'win':'linux']:{target:mac?'dmg':win?'nsis':'AppImage'}}}, null, 2));
-      put('main.js', 'const { app, BrowserWindow } = require("electron");\nconst path = require("path");\nfunction createWindow() {\n  const win = new BrowserWindow({ width: 1000, height: 700, title: ' + JSON.stringify(S.name) + ', icon: path.join(__dirname, "icon.png") });\n  win.setMenuBarVisibility(false);\n  win.loadFile(path.join(__dirname, "app", "index.html"));\n}\napp.whenReady().then(createWindow);\napp.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });\napp.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });\n');
+      put('package.json', JSON.stringify({name:id, productName:S.name, version:V, author:S.set.author || undefined, description:S.set.desc || undefined, main:'main.js', scripts:{start:'electron .', build:'electron-builder'}, devDependencies:{electron:'^31.0.0','electron-builder':'^24.13.3'}, build:{appId:pkg, productName:S.name, files:['main.js','app/**','icon.png'], icon:'icon.png', [mac?'mac':win?'win':'linux']:{target:mac?'dmg':win?'nsis':'AppImage'}}}, null, 2));
+      put('main.js', 'const { app, BrowserWindow } = require("electron");\nconst path = require("path");\nfunction createWindow() {\n  const win = new BrowserWindow({ width: ' + WW + ', height: ' + WH + ', backgroundColor: ' + JSON.stringify(S.set.bg) + ', title: ' + JSON.stringify(S.name) + ', icon: path.join(__dirname, "icon.png") });\n  win.setMenuBarVisibility(false);\n  win.loadFile(path.join(__dirname, "app", "index.html"));\n}\napp.whenReady().then(createWindow);\napp.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });\napp.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });\n');
       put('icon.png', await icon(512));
-      if (win) put('Open ' + nm + '.bat', ['@echo off', 'set "F=%~dp0app\\index.html"', 'start "" msedge --app="%F%" || start "" chrome --app="%F%" || start "" "%F%"', ''].join('\r\n'));
-      if (mac) put('Open ' + nm + '.command', '#!/bin/bash\ncd "$(dirname "$0")"\nF="$PWD/app/index.html"\nif [ -d "/Applications/Google Chrome.app" ]; then\n  open -na "Google Chrome" --args --app="file://$F"\nelif [ -d "/Applications/Microsoft Edge.app" ]; then\n  open -na "Microsoft Edge" --args --app="file://$F"\nelse\n  open "$F"\nfi\n', {unixPermissions:'755'});
-      if (S.plat === 'linux') put('Open ' + nm + '.sh', '#!/bin/sh\ncd "$(dirname "$0")"\nF="$PWD/app/index.html"\nfor b in google-chrome chromium chromium-browser microsoft-edge; do\n  if command -v $b >/dev/null 2>&1; then exec $b --app="file://$F"; fi\ndone\nexec xdg-open "$F"\n', {unixPermissions:'755'});
+      if (win) put('Open ' + nm + '.bat', ['@echo off', 'set "F=%~dp0app\\index.html"', 'start "" msedge --app="%F%" --window-size=' + WW + ',' + WH + ' || start "" chrome --app="%F%" --window-size=' + WW + ',' + WH + ' || start "" "%F%"', ''].join('\r\n'));
+      if (mac) put('Open ' + nm + '.command', '#!/bin/bash\ncd "$(dirname "$0")"\nF="$PWD/app/index.html"\nif [ -d "/Applications/Google Chrome.app" ]; then\n  open -na "Google Chrome" --args --app="file://$F" --window-size=' + WW + ',' + WH + '\nelif [ -d "/Applications/Microsoft Edge.app" ]; then\n  open -na "Microsoft Edge" --args --app="file://$F" --window-size=' + WW + ',' + WH + '\nelse\n  open "$F"\nfi\n', {unixPermissions:'755'});
+      if (S.plat === 'linux') put('Open ' + nm + '.sh', '#!/bin/sh\ncd "$(dirname "$0")"\nF="$PWD/app/index.html"\nfor b in google-chrome chromium chromium-browser microsoft-edge; do\n  if command -v $b >/dev/null 2>&1; then exec $b --app="file://$F" --window-size=' + WW + ',' + WH + '; fi\ndone\nexec xdg-open "$F"\n', {unixPermissions:'755'});
       put('README.md', '# ' + S.name + ' (' + P[S.plat].n + ')\n\nDouble-click "Open ' + nm + '.' + (win ? 'bat' : mac ? 'command' : 'sh') + '" to launch the app in its own window.\n' + (mac ? '\nThe first time, right-click the file and choose Open so macOS allows it.\n' : '') + (S.plat === 'linux' ? '\nIf it does not start, mark the file as executable in its Properties.\n' : '') + '\nWant a real installed app with your logo as its icon?\n1. Install Node.js from nodejs.org.\n2. Run `npm install`, then `npm run build`.\n3. Your installer is in the `dist` folder.\n');
     }
 
+    if (parent) return;
     const blob = await z.generateAsync({type:'blob', platform:'UNIX'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = id + '-' + S.plat + '.zip'; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -339,6 +325,406 @@ async function exportApp(){
 }
 $('#expBtn').onclick = exportApp;
 addEventListener('load', () => { if (typeof JSZip === 'undefined') alert('JSZip failed to load. Check your connection; export needs it.'); });
+const prefs = (() => { try { return {theme:'violet', fs:13, wrap:false, auto:true, ...JSON.parse(localStorage.getItem('appstudio.prefs'))}; } catch (e) { return {theme:'violet', fs:13, wrap:false, auto:true}; } })();
+const savePrefs = () => { try { localStorage.setItem('appstudio.prefs', JSON.stringify(prefs)); } catch (e) {} };
+const PH = {Small:[240,490], Standard:[270,550], Large:[300,620], Tablet:[380,520]};
+const DK = {Small:[300,230], Standard:[360,280], Large:[430,340]};
+const SK = 'appstudio.snaps';
+const HST = [];
+let hi = 0, land = false, errN = 0;
+
+function applyPrefs(){
+  document.documentElement.dataset.th = prefs.theme;
+  $('#editor').style.setProperty('--fs', prefs.fs + 'px');
+  $('#code').style.whiteSpace = prefs.wrap ? 'pre-wrap' : 'pre';
+  $('#gut').style.display = prefs.wrap ? 'none' : 'block';
+  $('#autoChk').checked = prefs.auto;
+  savePrefs();
+}
+function setTheme(n){
+  const T = ['violet','light','forest','sunset'];
+  if (!T.includes(n)) n = T[(T.indexOf(prefs.theme) + 1) % T.length];
+  prefs.theme = n; applyPrefs(); toast('Theme: ' + n);
+}
+function toast(m){ const d = document.createElement('div'); d.textContent = m; $('#toasts').appendChild(d); setTimeout(() => d.remove(), 2400); }
+const show = () => { $('#ov').hidden = false; };
+const hide = () => { $('#ov').hidden = true; };
+$('#ov').onclick = e => { if (e.target.id === 'ov') hide(); };
+addEventListener('keydown', e => {
+  if (e.key === 'Escape') hide();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k' && S.plat) { e.preventDefault(); palette(); }
+});
+function dl(n, b){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = n; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function form(title, fields, ok){
+  const b = $('#box');
+  b.innerHTML = '<h3>' + title + '</h3>' + fields.map(([k, l, t, o, v]) => {
+    let c;
+    if (t === 'select') c = '<select data-k="' + k + '">' + o.map(x => { const a = Array.isArray(x) ? x : [x, x]; return '<option value="' + a[0] + '"' + (a[0] == v ? ' selected' : '') + '>' + a[1] + '</option>'; }).join('') + '</select>';
+    else if (t === 'check') c = '<input type="checkbox" data-k="' + k + '"' + (v ? ' checked' : '') + '>';
+    else c = '<input type="' + t + '" data-k="' + k + '" value="' + String(v ?? '').replace(/"/g, '&quot;') + '">';
+    return '<label>' + l + c + '</label>';
+  }).join('') + '<div class="row"><button class="btn primary" id="fok">Apply</button><button class="btn" id="fno">Cancel</button></div>';
+  show();
+  $('#fok').onclick = () => { const r = {}; b.querySelectorAll('[data-k]').forEach(i => { r[i.dataset.k] = i.type === 'checkbox' ? i.checked : i.value; }); hide(); ok(r); };
+  $('#fno').onclick = hide;
+}
+
+function gut(){ const n = $('#code').value.split('\n').length; $('#gut').textContent = Array.from({length:n}, (_, i) => i + 1).join('\n'); }
+function stat(){
+  const t = $('#code'), l = t.value.slice(0, t.selectionStart).split('\n');
+  $('#status').textContent = 'Ln ' + l.length + ', Col ' + (l[l.length - 1].length + 1) + '   ' + t.value.split('\n').length + ' lines   ' + Object.keys(S.files).length + ' files   ' + (JSON.stringify(S.files).length / 1024).toFixed(1) + ' KB';
+}
+function openFile(f){ S.active = f; $('#code').value = S.files[f] ?? ''; $('#tab').textContent = f; renderFiles(); gut(); stat(); }
+function renderFiles(){
+  $('#files').innerHTML = '<div class="h"><span>Files</span><button id="addF" title="New file">+</button></div>' +
+    Object.keys(S.files).map(f => `<div class="f ${f===S.active?'on':''}" data-f="${f}"><span>${f}</span><span>${f==='index.html'?'':'<button data-dup="'+f+'" title="Duplicate">⧉</button><button data-del="'+f+'" title="Delete">×</button>'}</span></div>`).join('') +
+    '<div class="h" style="margin-top:14px"><span>Assets</span><button id="addA" title="Add image or sound">+</button></div>' +
+    (Object.keys(S.assets).map(n => `<div class="f" data-a="${n}"><span>${n}</span><button data-dela="${n}" title="Remove">×</button></div>`).join('') || '<div class="tag">Images and sounds you add are built into the app.</div>');
+}
+const FNAME = /^[\w\-.\/]+\.(html|css|js|json|txt|svg)$/i;
+function newFile(n){
+  n = (n || prompt('File name (for example utils.js or extra.css):') || '').trim();
+  if (!n) return;
+  if (!FNAME.test(n)) return term('error', 'Invalid name. Use letters, numbers, dashes and one of: .html .css .js .json .txt .svg');
+  if (S.files[n] !== undefined) return term('warn', n + ' already exists.');
+  S.files[n] = ''; openFile(n); persist(); toast('Created ' + n);
+}
+function delFile(f){
+  if (f === 'index.html' || S.files[f] === undefined) return term('error', f === 'index.html' ? 'index.html cannot be deleted.' : 'No such file.');
+  if (confirm('Delete ' + f + '?')) { delete S.files[f]; openFile('index.html'); persist(); run(); toast('Deleted ' + f); }
+}
+function renameFile(a, b){
+  a = a || S.active;
+  if (a === 'index.html') return toast('index.html cannot be renamed');
+  b = b || prompt('New name for ' + a, a);
+  if (!b || b === a) return;
+  if (!FNAME.test(b) || S.files[b] !== undefined) return term('error', 'Cannot rename to ' + b);
+  const o = {};
+  for (const k in S.files) o[k === a ? b : k] = S.files[k].split(a).join(b);
+  S.files = o; openFile(b); persist(); run(); toast('Renamed to ' + b + '. References updated.');
+}
+function dupFile(f){
+  f = f || S.active;
+  const m = f.match(/^(.*)\.(\w+)$/), n = m[1] + '-copy.' + m[2];
+  S.files[n] = S.files[f]; openFile(n); persist(); toast('Duplicated as ' + n);
+}
+function addFiles(list){
+  [...list].forEach(f => {
+    const r = new FileReader(), n = f.name.replace(/\s+/g, '-');
+    if (/\.appstudio$/i.test(n)) { r.onload = () => { try { loadProject(JSON.parse(r.result)); } catch (x) { term('error', 'Could not open project: ' + x.message); } }; r.readAsText(f); return; }
+    if (!S.plat) return;
+    if (/\.(html?|css|js|json|txt)$/i.test(n)) { r.onload = () => { S.files[n] = r.result; renderFiles(); persist(); toast('Added ' + n); }; r.readAsText(f); }
+    else if (/^(image|audio)\//.test(f.type)) {
+      if (f.size > 1.5e6) term('warn', n + ' is large. Big assets slow the app down and may stop auto-save.');
+      r.onload = () => { S.assets[n] = r.result; renderFiles(); persist(); run(); toast('Asset added: ' + n); };
+      r.readAsDataURL(f);
+    } else term('error', 'Unsupported file: ' + f.name);
+  });
+}
+$('#files').onclick = e => {
+  const t = e.target, row = t.closest('.f');
+  if (t.id === 'addF') newFile();
+  else if (t.id === 'addA') $('#assetFile').click();
+  else if (t.dataset.dup) dupFile(t.dataset.dup);
+  else if (t.dataset.del) delFile(t.dataset.del);
+  else if (t.dataset.dela) { delete S.assets[t.dataset.dela]; renderFiles(); persist(); run(); }
+  else if (row && row.dataset.f) openFile(row.dataset.f);
+  else if (row && row.dataset.a) { if (navigator.clipboard) navigator.clipboard.writeText(row.dataset.a); toast('Name copied. Use it in your code.'); }
+};
+$('#files').ondblclick = e => { const f = e.target.closest('.f'); if (f && f.dataset.f) renameFile(f.dataset.f); };
+$('#assetFile').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', e => { e.preventDefault(); addFiles(e.dataTransfer.files); });
+
+$('#code').addEventListener('input', () => { S.files[S.active] = $('#code').value; persist(); gut(); stat(); clearTimeout(timer); if (prefs.auto) timer = setTimeout(run, 900); });
+$('#code').addEventListener('scroll', () => { $('#gut').scrollTop = $('#code').scrollTop; });
+['keyup', 'click'].forEach(ev => $('#code').addEventListener(ev, stat));
+$('#code').addEventListener('keydown', e => {
+  const t = e.target, v = t.value, s = t.selectionStart, en = t.selectionEnd, k = e.key, m = e.ctrlKey || e.metaKey;
+  const sync = () => t.dispatchEvent(new Event('input'));
+  if (k === 'Tab') { e.preventDefault(); t.setRangeText('  ', s, en, 'end'); sync(); return; }
+  if (m && k === 'Enter') { e.preventDefault(); run(); return; }
+  if (m && k === 's') { e.preventDefault(); saveProject(); return; }
+  if (m && k === 'f') { e.preventDefault(); findOpen(); return; }
+  if (e.altKey && e.shiftKey && k === 'F') { e.preventDefault(); fmt(); return; }
+  if (m && k === 'd') {
+    e.preventDefault();
+    const ls = v.lastIndexOf('\n', s - 1) + 1, le = v.indexOf('\n', en), end = le < 0 ? v.length : le;
+    t.setRangeText('\n' + v.slice(ls, end), end, end, 'end'); sync(); return;
+  }
+  if (e.altKey && (k === 'ArrowUp' || k === 'ArrowDown')) {
+    e.preventDefault();
+    const L = v.split('\n'), i = v.slice(0, s).split('\n').length - 1, j = k === 'ArrowUp' ? i - 1 : i + 1;
+    if (j < 0 || j >= L.length) return;
+    [L[i], L[j]] = [L[j], L[i]]; t.value = L.join('\n');
+    const p = L.slice(0, j).join('\n').length + (j ? 1 : 0); t.setSelectionRange(p, p); sync(); return;
+  }
+  if (k === 'Enter' && !m) {
+    e.preventDefault();
+    const line = v.slice(v.lastIndexOf('\n', s - 1) + 1, s), ind = line.match(/^\s*/)[0], open = /[{(\[]\s*$/.test(line), close = /^[}\])]/.test(v.slice(en));
+    let ins = '\n' + ind + (open ? '  ' : '');
+    if (open && close) ins += '\n' + ind;
+    t.setRangeText(ins, s, en, 'end');
+    if (open && close) { const p = s + 1 + ind.length + 2; t.setSelectionRange(p, p); }
+    sync(); return;
+  }
+  if (k.length === 1 && !m && !e.altKey) {
+    const PAIRS = {'(':')', '[':']', '{':'}', '"':'"', "'":"'", '`':'`'};
+    if (')]}"\'`'.includes(k) && v[s] === k && s === en) { e.preventDefault(); t.setSelectionRange(s + 1, s + 1); return; }
+    if (PAIRS[k] && !(/["'`]/.test(k) && /\w/.test(v[s - 1] || ''))) {
+      e.preventDefault();
+      const sel = v.slice(s, en);
+      t.setRangeText(k + sel + PAIRS[k], s, en, 'end'); t.setSelectionRange(s + 1, s + 1 + sel.length); sync();
+    }
+  }
+});
+
+function findOpen(){ $('#fbar').hidden = false; $('#fq').focus(); $('#fq').select(); }
+function findNext(){
+  const t = $('#code'), q = $('#fq').value; if (!q) return;
+  let i = t.value.indexOf(q, t.selectionEnd); if (i < 0) i = t.value.indexOf(q);
+  if (i < 0) return $('#fc').textContent = 'Not found';
+  t.focus(); t.setSelectionRange(i, i + q.length); $('#fc').textContent = (t.value.split(q).length - 1) + ' found';
+}
+function replAll(){
+  const t = $('#code'), q = $('#fq').value; if (!q) return;
+  const n = t.value.split(q).length - 1;
+  t.value = t.value.split(q).join($('#fr').value); t.dispatchEvent(new Event('input')); $('#fc').textContent = n + ' replaced';
+}
+$('#fq').onkeydown = e => { if (e.key === 'Enter') findNext(); if (e.key === 'Escape') $('#fbar').hidden = true; };
+$('#fn').onclick = findNext; $('#fa').onclick = replAll; $('#fx').onclick = () => { $('#fbar').hidden = true; };
+function findAll(q){
+  if (!q) return term('warn', 'Usage: find <text>');
+  let n = 0;
+  for (const f in S.files) S.files[f].split('\n').forEach((l, i) => { if (l.includes(q)) { n++; term('log', f + ':' + (i + 1) + '  ' + l.trim()); } });
+  term('info', n + ' match' + (n === 1 ? '' : 'es'));
+}
+function fmt(){
+  const f = S.active; let v = S.files[f];
+  if (/\.(js|css|json)$/.test(f)) {
+    let d = 0;
+    v = v.split('\n').map(l => {
+      l = l.trim(); if (!l) return '';
+      const lead = /^[}\])]/.test(l), op = (l.match(/[{\[(]/g) || []).length, cl = (l.match(/[}\])]/g) || []).length;
+      if (lead) d = Math.max(0, d - 1);
+      const o = '  '.repeat(d) + l;
+      d = Math.max(0, d + op - cl + (lead ? 1 : 0)); return o;
+    }).join('\n');
+  } else v = v.split('\n').map(l => l.replace(/\s+$/, '')).join('\n');
+  S.files[f] = v; $('#code').value = v; gut(); persist(); run(); toast('Formatted ' + f);
+}
+
+const SN = [
+ ['Button', '<button id="myBtn">Click me</button>'],
+ ['Text input', '<input id="myInput" placeholder="Type here">'],
+ ['Nav bar (HTML)', '<nav><a href="#home">Home</a> <a href="#about">About</a></nav>'],
+ ['Click handler', 'document.getElementById("myBtn").addEventListener("click", () => {\n  \n});'],
+ ['Save to storage', 'localStorage.setItem("key", JSON.stringify(value));'],
+ ['Load from storage', 'const saved = JSON.parse(localStorage.getItem("key") || "null");'],
+ ['Fetch JSON', 'fetch("https://api.example.com/data")\n  .then(r => r.json())\n  .then(data => console.log(data))\n  .catch(err => console.error(err));'],
+ ['Repeating timer', 'setInterval(() => {\n  \n}, 1000);'],
+ ['Toast message', 'function toast(msg) {\n  const d = document.createElement("div");\n  d.textContent = msg;\n  d.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px";\n  document.body.appendChild(d);\n  setTimeout(() => d.remove(), 2000);\n}'],
+ ['Vibrate', 'navigator.vibrate(200);'],
+ ['Copy to clipboard', 'navigator.clipboard.writeText("text");'],
+ ['Share sheet', 'navigator.share({ title: document.title, url: location.href });'],
+ ['Speak text', 'speechSynthesis.speak(new SpeechSynthesisUtterance("Hello"));'],
+ ['Get location', 'navigator.geolocation.getCurrentPosition(p => console.log(p.coords.latitude, p.coords.longitude));'],
+ ['Dark mode toggle', 'document.body.classList.toggle("dark");'],
+ ['Online status', 'addEventListener("offline", () => console.warn("You are offline"));'],
+ ['Random number', 'const n = Math.floor(Math.random() * 100) + 1;'],
+ ['Centered layout (CSS)', 'body {\n  display: grid;\n  place-items: center;\n  min-height: 100vh;\n}'],
+ ['Card (CSS)', '.card {\n  background: #fff;\n  padding: 16px;\n  border-radius: 14px;\n  box-shadow: 0 4px 14px rgba(0,0,0,.12);\n}'],
+ ['Dark theme (CSS)', 'body.dark {\n  background: #111;\n  color: #eee;\n}']
+];
+function snippet(){
+  form('Insert snippet', [['i', 'Snippet', 'select', SN.map((s, i) => [i, s[0]]), 0]], r => {
+    const t = $('#code'); t.setRangeText(SN[r.i][1], t.selectionStart, t.selectionEnd, 'end'); t.dispatchEvent(new Event('input')); t.focus();
+  });
+}
+const BASE = 'body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fb;color:#1c2033;padding:20px}\nbutton{padding:10px 18px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-size:15px}\ninput,textarea{padding:10px;border:1px solid #cfd3e6;border-radius:10px;font-size:15px;width:100%;box-sizing:border-box}\nul{padding:0;list-style:none}\nli{background:#fff;padding:10px 14px;border-radius:10px;margin:8px 0;display:flex;justify-content:space-between}';
+const page = (body, js) => ({'index.html':'<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width,initial-scale=1">\n  <title>My App</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n' + body + '\n  <script src="app.js"><\/script>\n</body>\n</html>', 'style.css':BASE, 'app.js':js});
+const TPL = {
+ 'Blank starter': START,
+ 'To-do list': page('  <h1>To-do</h1>\n  <input id="in" placeholder="Add a task">\n  <ul id="list"></ul>', 'const list = document.getElementById("list");\nconst input = document.getElementById("in");\nlet tasks = JSON.parse(localStorage.getItem("tasks") || "[]");\nfunction draw() {\n  list.innerHTML = "";\n  tasks.forEach((t, i) => {\n    const li = document.createElement("li");\n    li.textContent = t;\n    const b = document.createElement("button");\n    b.textContent = "Done";\n    b.onclick = () => { tasks.splice(i, 1); save(); };\n    li.appendChild(b);\n    list.appendChild(li);\n  });\n}\nfunction save() {\n  localStorage.setItem("tasks", JSON.stringify(tasks));\n  draw();\n}\ninput.addEventListener("keydown", e => {\n  if (e.key === "Enter" && input.value.trim()) {\n    tasks.push(input.value.trim());\n    input.value = "";\n    save();\n  }\n});\ndraw();'),
+ 'Stopwatch': page('  <h1 id="t">0.0</h1>\n  <button id="go">Start</button>\n  <button id="rs">Reset</button>', 'let ms = 0, id = null;\nconst t = document.getElementById("t");\ndocument.getElementById("go").onclick = e => {\n  if (id) { clearInterval(id); id = null; e.target.textContent = "Start"; }\n  else { id = setInterval(() => { ms += 100; t.textContent = (ms / 1000).toFixed(1); }, 100); e.target.textContent = "Stop"; }\n};\ndocument.getElementById("rs").onclick = () => { ms = 0; t.textContent = "0.0"; };'),
+ 'Notes': page('  <h1>Notes</h1>\n  <textarea id="n" rows="12" placeholder="Write here. It saves itself."></textarea>', 'const n = document.getElementById("n");\nn.value = localStorage.getItem("note") || "";\nn.addEventListener("input", () => localStorage.setItem("note", n.value));'),
+ 'Calculator': page('  <h1 id="d">0</h1>\n  <div id="k"></div>', 'const d = document.getElementById("d");\nconst k = document.getElementById("k");\nlet e = "";\n"789/456*123-0.=+C".split("").forEach(c => {\n  const b = document.createElement("button");\n  b.textContent = c;\n  b.style.cssText = "margin:4px;width:22%";\n  b.onclick = () => {\n    if (c === "C") e = "";\n    else if (c === "=") { try { e = String(Function("return (" + e + ")")()); } catch (x) { e = "Error"; } }\n    else e += c;\n    d.textContent = e || "0";\n  };\n  k.appendChild(b);\n});')
+};
+function pickTemplate(){
+  form('Start from a template', [['t', 'Template', 'select', Object.keys(TPL), 'Blank starter']], r => {
+    if (!confirm('This replaces your current files. A snapshot is saved first.')) return;
+    takeSnap('before template'); S.files = {...TPL[r.t]}; openFile('index.html'); persist(); run(); toast('Template loaded');
+  });
+}
+
+const snaps = () => { try { return JSON.parse(localStorage.getItem(SK)) || []; } catch (e) { return []; } };
+function takeSnap(l){
+  const a = snaps(); a.unshift({t:Date.now(), l:l || 'manual', d:{files:S.files, set:S.set, active:S.active, name:S.name}});
+  try { localStorage.setItem(SK, JSON.stringify(a.slice(0, 8))); toast('Snapshot saved'); } catch (e) { term('error', 'Snapshot failed: browser storage is full.'); }
+}
+function restoreSnap(){
+  const a = snaps(); if (!a.length) return toast('No snapshots yet');
+  form('Restore snapshot', [['i', 'Snapshot', 'select', a.map((s, i) => [i, new Date(s.t).toLocaleString() + ' (' + s.l + ')']), 0]], r => {
+    takeSnap('before restore');
+    const s = a[r.i].d; S.files = s.files; S.set = {...DS, ...s.set}; S.name = s.name || S.name; $('#appName').value = S.name;
+    openFile(s.files[s.active] !== undefined ? s.active : 'index.html'); persist(); run(); toast('Snapshot restored');
+  });
+}
+function newProject(){
+  if (!confirm('Start a new project? A snapshot of this one is saved first.')) return;
+  takeSnap('before new project'); S.files = {...START}; S.set = {...DS}; S.assets = {}; S.logo = null; S.name = 'My App';
+  $('#appName').value = S.name; openFile('index.html'); updateLogo(); persist(); run(); toast('New project');
+}
+
+function settings(){
+  const s = S.set;
+  form('Project settings', [
+    ['ver', 'Version', 'text', null, s.ver], ['author', 'Author', 'text', null, s.author], ['desc', 'Description', 'text', null, s.desc],
+    ['pkg', 'Package id (com.me.myapp)', 'text', null, s.pkg], ['theme', 'Theme color', 'color', null, s.theme], ['bg', 'Background color', 'color', null, s.bg],
+    ['orient', 'Orientation', 'select', ['any', 'portrait', 'landscape'], s.orient], ['shape', 'Icon shape', 'select', ['square', 'rounded', 'circle'], s.shape],
+    ['iconBg', 'Icon background', 'color', null, s.iconBg], ['win', 'Desktop window size', 'text', null, s.win],
+    ['splash', 'Splash screen with logo', 'check', null, s.splash], ['offline', 'Work offline (web and phone installs)', 'check', null, s.offline]
+  ], r => {
+    Object.assign(S.set, r);
+    if (r.orient !== 'any') { land = r.orient === 'landscape'; setSize(); }
+    persist(); toast('Settings applied');
+  });
+}
+function logoMaker(){
+  form('Create a logo', [['t', 'Letters or emoji', 'text', null, S.name[0] || 'A'], ['a', 'Color 1', 'color', null, '#ff5fa2'], ['b', 'Color 2', 'color', null, '#7c5cff']], r => {
+    const c = document.createElement('canvas'); c.width = c.height = 512;
+    const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 512, 512);
+    g.addColorStop(0, r.a); g.addColorStop(1, r.b); x.fillStyle = g; x.fillRect(0, 0, 512, 512);
+    x.fillStyle = '#fff'; x.font = 'bold ' + (r.t.length > 2 ? 170 : 300) + 'px Georgia,serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(r.t.slice(0, 3), 256, 280); S.logo = c.toDataURL('image/png'); updateLogo(); persist(); toast('Logo created');
+  });
+}
+async function draw(size){
+  const i = await loadImg(S.logo || defaultLogo()), c = document.createElement('canvas'), s = Math.min(i.width, i.height);
+  c.width = c.height = size;
+  const x = c.getContext('2d'), r = S.set.shape === 'circle' ? size / 2 : S.set.shape === 'rounded' ? size * 0.22 : 0;
+  x.beginPath(); x.roundRect(0, 0, size, size, r); x.clip();
+  x.fillStyle = S.set.iconBg; x.fillRect(0, 0, size, size);
+  x.drawImage(i, (i.width - s) / 2, (i.height - s) / 2, s, s, 0, 0, size, size);
+  return c;
+}
+function inline(){
+  const F = S.files;
+  const h = F['index.html']
+    .replace(/<link[^>]*href=["']([^"']+)["'][^>]*>/gi, (m, f) => F[f] !== undefined ? '<style>' + F[f] + '</style>' : m)
+    .replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (m, f) => F[f] !== undefined ? '<script>' + F[f].replace(/<\/script/gi, '<\\/script') + '<\/script>' : m);
+  return Object.keys(S.assets).reduce((s, n) => s.split(n).join(S.assets[n]), h);
+}
+function injectHead(h, t){ return /<\/head>/i.test(h) ? h.replace(/<\/head>/i, t + '</head>') : t + h; }
+async function bundle(extra, raw){
+  const d = (await draw(128)).toDataURL('image/png'), h = raw ? S.files['index.html'] : inline(), esc = x => x.replace(/[<>&"]/g, '');
+  const meta = (/<meta[^>]+viewport/i.test(h) ? '' : '<meta name="viewport" content="width=device-width,initial-scale=1">') + (S.set.desc ? '<meta name="description" content="' + esc(S.set.desc) + '">' : '') + '<meta name="theme-color" content="' + S.set.theme + '">';
+  const sp = S.set.splash ? '<script>document.addEventListener("DOMContentLoaded",function(){var d=document.createElement("div"),i=new Image();d.style.cssText="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity .4s;background:"+' + JSON.stringify(S.set.bg) + ';i.src=' + JSON.stringify(d) + ';i.style.cssText="width:96px;height:96px;border-radius:22%";d.appendChild(i);document.body.appendChild(d);setTimeout(function(){d.style.opacity=0;setTimeout(function(){d.remove()},450)},700)})<\/script>' : '';
+  return injectHead(h, extra + meta + sp + '<link rel="icon" href="' + d + '">');
+}
+async function dlSingle(){
+  if (S.files['index.html'] === undefined) return term('error', 'index.html is missing.');
+  dl(slug() + '.html', new Blob([await bundle('')], {type:'text/html'})); toast('Downloaded ' + slug() + '.html');
+}
+async function exportAll(){
+  if (S.files['index.html'] === undefined) return term('error', 'index.html is missing.');
+  const z = new JSZip(), keep = S.plat; term('info', 'Building for every device…');
+  try { for (const k of Object.keys(P)) { S.plat = k; await exportApp(z); } } finally { S.plat = keep; }
+  dl(slug() + '-all-devices.zip', await z.generateAsync({type:'blob', platform:'UNIX'})); term('ok', '✔ Exported ' + slug() + '-all-devices.zip');
+}
+
+function health(quiet){
+  const F = S.files, h = F['index.html'] || '', o = [], ids = {};
+  if (!/<meta[^>]+viewport/i.test(h)) o.push('index.html has no viewport tag. The app may look tiny on phones.');
+  if (!/<title>/i.test(h)) o.push('index.html has no title.');
+  if (!/<html[^>]+lang=/i.test(h)) o.push('The html tag has no lang attribute. Screen readers need it.');
+  if (/<img(?![^>]*alt=)/i.test(h)) o.push('An image has no alt text.');
+  (h.match(/id=["'][^"']+["']/g) || []).forEach(x => { ids[x] = (ids[x] || 0) + 1; });
+  Object.keys(ids).filter(x => ids[x] > 1).forEach(x => o.push('Duplicate ' + x));
+  for (const f in F) { if (!F[f].trim()) o.push(f + ' is empty.'); if (/\b(alert|eval)\(/.test(F[f])) o.push(f + ' uses alert() or eval(). Avoid them in finished apps.'); }
+  for (const n in S.assets) if (S.assets[n].length > 1e6) o.push('Asset ' + n + ' is large. Compress it so the app opens fast.');
+  if (!S.logo) o.push('No logo uploaded. A default letter icon will be used.');
+  if (!S.set.desc) o.push('Add an app description in Settings.');
+  if (quiet) { if (o.length) term('warn', 'Check found ' + o.length + ' thing(s). Type check to see them.'); return; }
+  if (o.length) o.forEach(m => term('warn', '• ' + m)); else term('ok', '✔ No problems found.');
+}
+
+function fillSizes(){
+  const ph = P[S.plat].t === 'phone', L = ph ? PH : DK;
+  $('#szSel').innerHTML = Object.keys(L).map(k => '<option' + (k === 'Standard' ? ' selected' : '') + '>' + k + '</option>').join('');
+  $('#rotBtn').disabled = !ph; land = false; setSize();
+}
+function setSize(){
+  const ph = P[S.plat].t === 'phone', [w, h] = (ph ? PH : DK)[$('#szSel').value] || [270, 550], d = $('#dev'), l = land && ph;
+  d.style.maxWidth = 'none'; d.style.width = (l ? h : w) + 'px'; d.style.height = (l ? w : h) + 'px'; d.style.zoom = $('#zoom').value / 100;
+}
+$('#szSel').onchange = setSize; $('#zoom').oninput = setSize;
+$('#rotBtn').onclick = () => { land = !land; setSize(); };
+$('#rlBtn').onclick = () => run();
+$('#fsBtn').onclick = () => { if ($('#dev').requestFullscreen) $('#dev').requestFullscreen(); };
+$('#autoChk').onchange = e => { prefs.auto = e.target.checked; savePrefs(); };
+
+function badge(){ $('#errc').textContent = errN ? errN + ' error' + (errN > 1 ? 's' : '') : ''; }
+function term(type, msg){
+  const d = document.createElement('div'); d.className = type; d.textContent = msg;
+  $('#log').appendChild(d); $('#log').scrollTop = 1e9;
+  if (type === 'error') { errN++; badge(); }
+}
+function copyLog(){ navigator.clipboard.writeText($('#log').innerText).then(() => toast('Terminal copied')); }
+const TC = {
+  help: () => term('info', 'run, export, all, save, files, clear, new <file>, rm <file>, cat <file>, rename <old> <new>, find <text>, stats, check, snapshot, restore, theme <violet|light|forest|sunset>, copylog\nAnything else runs as JavaScript in the running app. Press Ctrl+K for every action.'),
+  run: () => run(), export: () => exportApp(), all: () => exportAll(), save: () => saveProject(),
+  files: () => term('log', Object.keys(S.files).join('\n')),
+  clear: () => { $('#log').innerHTML = ''; errN = 0; badge(); },
+  new: a => newFile(a[0]), rm: a => delFile(a[0]), cat: a => term('log', S.files[a[0]] ?? 'No such file.'),
+  rename: a => renameFile(a[0], a[1]), find: a => findAll(a.join(' ')),
+  stats: () => term('info', Object.keys(S.files).length + ' files, ' + (JSON.stringify(S.files).length / 1024).toFixed(1) + ' KB of code, ' + Object.keys(S.assets).length + ' assets'),
+  check: () => health(), snapshot: () => takeSnap(), restore: () => restoreSnap(), theme: a => setTheme(a[0]), copylog: copyLog
+};
+$('#clrBtn').onclick = () => TC.clear();
+$('#cpBtn').onclick = copyLog;
+$('#cmd').onkeydown = e => {
+  if (e.key === 'ArrowUp') { e.preventDefault(); hi = Math.max(0, hi - 1); e.target.value = HST[hi] || ''; return; }
+  if (e.key === 'ArrowDown') { e.preventDefault(); hi = Math.min(HST.length, hi + 1); e.target.value = HST[hi] || ''; return; }
+  if (e.key !== 'Enter') return;
+  const v = e.target.value.trim(); e.target.value = ''; if (!v) return;
+  HST.push(v); hi = HST.length; term('log', '> ' + v);
+  const [c, ...a] = v.split(' ');
+  if (Object.prototype.hasOwnProperty.call(TC, c)) TC[c](a); else $('#frame').contentWindow.postMessage({ev: v}, '*');
+};
+
+function shortcuts(){
+  $('#box').innerHTML = '<h3>Keyboard shortcuts</h3><pre>Ctrl+K        All commands\nCtrl+Enter    Run the app\nCtrl+S        Save project file\nCtrl+F        Find and replace\nCtrl+D        Duplicate line\nAlt+Up/Down   Move line\nAlt+Shift+F   Format code\nTab           Indent\nEnter         Smart indent\nDouble-click  Rename a file\nEsc           Close windows</pre><div class="row"><button class="btn" id="fno">Close</button></div>';
+  show(); $('#fno').onclick = hide;
+}
+const CMDS = [
+  ['Run app', () => run()], ['Export app', () => exportApp()], ['Export for all devices', exportAll], ['Download as one HTML file', dlSingle],
+  ['Save project file', () => saveProject()], ['Open project file', () => $('#prjFile').click()], ['New project', newProject], ['Start from a template', pickTemplate],
+  ['Insert snippet', snippet], ['Format code', fmt], ['Find and replace', findOpen], ['Project settings', settings], ['Create a logo', logoMaker],
+  ['Upload logo', () => $('#upFile').click()], ['Add image or sound', () => $('#assetFile').click()], ['New file', () => newFile()],
+  ['Rename file', () => renameFile()], ['Duplicate file', () => dupFile()], ['Delete file', () => delFile(S.active)],
+  ['Download current file', () => dl(S.active, new Blob([S.files[S.active]]))],
+  ['Copy current file', () => navigator.clipboard.writeText(S.files[S.active]).then(() => toast('Copied'))],
+  ['Take snapshot', () => takeSnap()], ['Restore snapshot', restoreSnap], ['Check app for problems', () => health()], ['Change studio theme', () => setTheme()],
+  ['Toggle word wrap', () => { prefs.wrap = !prefs.wrap; applyPrefs(); }], ['Bigger text', () => { prefs.fs = Math.min(24, prefs.fs + 1); applyPrefs(); }],
+  ['Smaller text', () => { prefs.fs = Math.max(9, prefs.fs - 1); applyPrefs(); }], ['Toggle auto-run', () => { prefs.auto = !prefs.auto; applyPrefs(); toast('Auto-run ' + (prefs.auto ? 'on' : 'off')); }],
+  ['Rotate device', () => $('#rotBtn').click()], ['Reload simulator', () => run()], ['Fullscreen simulator', () => $('#fsBtn').click()],
+  ['Focus mode', () => $('#studio').classList.toggle('focus')], ['Keyboard shortcuts', shortcuts], ['Clear terminal', () => TC.clear()],
+  ['Copy terminal output', copyLog], ['Change device', () => $('#swBtn').click()]
+];
+function palette(){
+  const b = $('#box'); b.innerHTML = '<input id="pq" placeholder="Type a command" autocomplete="off"><div id="pl"></div>'; show();
+  const q = $('#pq'), rd = () => { $('#pl').innerHTML = CMDS.map((c, i) => [c, i]).filter(([c]) => c[0].toLowerCase().includes(q.value.toLowerCase())).map(([c, i]) => '<div class="pi" data-i="' + i + '">' + c[0] + '</div>').join(''); };
+  const go = i => { hide(); CMDS[i][1](); };
+  q.oninput = rd; q.onkeydown = e => { if (e.key === 'Enter') { const f = $('#pl .pi'); if (f) go(f.dataset.i); } };
+  $('#pl').onclick = e => { const p = e.target.closest('.pi'); if (p) go(p.dataset.i); };
+  rd(); q.focus();
+}
+$('#palBtn').onclick = palette; $('#setBtn').onclick = settings;
+applyPrefs();
 renderResume();
 </script>
 </body>
