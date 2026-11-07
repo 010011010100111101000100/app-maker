@@ -271,6 +271,7 @@ const label = () => S.name.replace(/[^\w ]/g, '').trim() || 'App';
 
 
 async function exportApp(parent){
+  if (!(parent instanceof JSZip)) parent = null;
   if (S.files['index.html'] === undefined) return term('error', 'Export stopped: index.html is missing.');
   term('info', 'Building ' + P[S.plat].n + ' app…');
   if (!parent) health(true);
@@ -322,7 +323,7 @@ async function exportApp(parent){
     term('ok', '✔ Exported ' + id + '-' + S.plat + '.zip. Unzip it and read README.md for the one-step launch.');
   } catch (e) { term('error', 'Export failed: ' + e.message); }
 }
-$('#expBtn').onclick = exportApp;
+$('#expBtn').onclick = () => exportApp();
 addEventListener('load', () => { if (typeof JSZip === 'undefined') alert('JSZip failed to load. Check your connection; export needs it.'); });
 const prefs = (() => { try { return {theme:'violet', fs:13, wrap:false, auto:true, ...JSON.parse(localStorage.getItem('appstudio.prefs'))}; } catch (e) { return {theme:'violet', fs:13, wrap:false, auto:true}; } })();
 const savePrefs = () => { try { localStorage.setItem('appstudio.prefs', JSON.stringify(prefs)); } catch (e) {} };
