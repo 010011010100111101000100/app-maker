@@ -94,6 +94,8 @@ header .btn{padding:6px 10px;font-size:13px;white-space:nowrap}
 .pi{padding:8px 10px;border-radius:9px;cursor:pointer}
 .pi:hover,.pi:first-child{background:var(--panel2)}
 #box pre{font:12.5px/1.8 var(--mono);white-space:pre-wrap;margin:0}
+#box ol{padding-left:20px;line-height:1.7;margin:0 0 10px}
+#box ol+pre{background:var(--bg);padding:10px;border-radius:8px;user-select:all;margin-bottom:10px}
 #toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;z-index:60}
 #toasts div{background:var(--panel2);border:1px solid var(--a2);padding:8px 16px;border-radius:20px}
 #errc{color:var(--err);margin-left:10px}
@@ -127,6 +129,7 @@ header .btn{padding:6px 10px;font-size:13px;white-space:nowrap}
     <span class="sp"></span>
     <span class="tag" id="saved"></span>
     <button class="btn" id="palBtn">Commands</button>
+    <button class="btn" id="helpBtn">Help</button>
     <button class="btn" id="setBtn">Settings</button>
     <button class="btn" id="openBtn">Open</button>
     <button class="btn" id="saveBtn">Save</button>
@@ -159,7 +162,7 @@ const P = {
   android:{n:'Android', i:'📱', t:'phone', d:'Phones and tablets. Exports an Android Studio project.'},
   ios:{n:'iPhone & iPad', i:'🍎', t:'phone', d:'Installable web app for Add to Home Screen.'},
   chromebook:{n:'Chromebook', i:'💻', t:'desk', d:'Installable app that opens in its own window.'},
-  mac:{n:'Mac', i:'🖥️', t:'desk', d:'Exports a real .dmg with the app inside.'},
+  mac:{n:'Mac', i:'🖥️', t:'desk', d:'A real .app in a zip. Unzip and double-click.'},
   windows:{n:'Windows', i:'🪟', t:'desk', d:'One-file installer. Adds Start menu and Desktop icons.'},
   linux:{n:'Linux', i:'🐧', t:'desk', d:'One-file installer. Adds the app to your app menu.'},
   web:{n:'Website', i:'🌐', t:'desk', d:'One .html file that opens with a double-click.'}
@@ -274,7 +277,12 @@ async function exportApp(parent){
   if (!(parent instanceof JSZip)) parent = null;
   if (S.files['index.html'] === undefined) return term('error', 'Export stopped: index.html is missing.');
   term('info', 'Building ' + P[S.plat].n + ' app…');
-  if (!parent) health(true);
+  if (!parent) {
+    const pf = await preflight();
+    if (pf.bad.length) { pf.bad.forEach(m => term('error', 'Export stopped: ' + m)); return; }
+    pf.warn.forEach(m => term('warn', m));
+    health(true);
+  }
   try {
     const id = slug(), pkg = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$/.test(S.set.pkg) ? S.set.pkg : 'com.studio.' + id, z = parent || new JSZip(), r = z.folder(id + '-' + S.plat), V = S.set.ver || '1.0.0', [WW, WH] = (S.set.win.match(/\d+/g) || [1000, 700]), TH = S.set.theme, OR = {any:'unspecified', portrait:'portrait', landscape:'landscape'}[S.set.orient];
     const put = (p, c, o) => r.file(p, c, o);
@@ -295,7 +303,7 @@ async function exportApp(parent){
     }
 
     if (S.plat === 'web') {
-      deliver(parent, r, id + '.html', new Blob([await bundle('')], {type:'text/html'}));
+      await deliver(parent, r, id + '.html', new Blob([await bundle('')], {type:'text/html'}));
       return;
     }
 
@@ -312,7 +320,7 @@ async function exportApp(parent){
 
     if (S.plat === 'mac' || S.plat === 'windows' || S.plat === 'linux') {
       const pk = await nativePkg(S.plat, {nm:label(), id, pkg, V, WW, WH});
-      deliver(parent, r, pk.name, pk.blob);
+      await deliver(parent, r, pk.name, pk.blob);
       return;
     }
 
@@ -321,10 +329,19 @@ async function exportApp(parent){
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = id + '-' + S.plat + '.zip'; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     term('ok', '✔ Exported ' + id + '-' + S.plat + '.zip. Unzip it and read README.md for the one-step launch.');
+    logExport(id + '-' + S.plat + '.zip', blob.size, '');
+    howDialog(id + '-' + S.plat + '.zip', '');
   } catch (e) { term('error', 'Export failed: ' + e.message); }
 }
-$('#expBtn').onclick = () => exportApp();
-addEventListener('load', () => { if (typeof JSZip === 'undefined') alert('JSZip failed to load. Check your connection; export needs it.'); });
+$('#expBtn').onclick = runExport;
+addEventListener('load', () => {
+  if (typeof JSZip !== 'undefined') return;
+  const sc = document.createElement('script');
+  sc.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+  sc.onload = () => term('ok', 'Export engine loaded from the backup source.');
+  sc.onerror = () => alert('The export engine failed to load. Check your internet connection and reload.');
+  document.head.appendChild(sc);
+});
 const prefs = (() => { try { return {theme:'violet', fs:13, wrap:false, auto:true, ...JSON.parse(localStorage.getItem('appstudio.prefs'))}; } catch (e) { return {theme:'violet', fs:13, wrap:false, auto:true}; } })();
 const savePrefs = () => { try { localStorage.setItem('appstudio.prefs', JSON.stringify(prefs)); } catch (e) {} };
 const PH = {Small:[240,490], Standard:[270,550], Large:[300,620], Tablet:[380,520]};
@@ -631,6 +648,8 @@ async function dlSingle(){
 }
 async function exportAll(){
   if (S.files['index.html'] === undefined) return term('error', 'index.html is missing.');
+  const pf = await preflight();
+  if (pf.bad.length) return pf.bad.forEach(m => term('error', 'Export stopped: ' + m));
   const z = new JSZip(), keep = S.plat; term('info', 'Building for every device…');
   try { for (const k of Object.keys(P)) { S.plat = k; await exportApp(z); } } finally { S.plat = keep; }
   dl(slug() + '-all-devices.zip', await z.generateAsync({type:'blob', platform:'UNIX'})); term('ok', '✔ Exported ' + slug() + '-all-devices.zip');
@@ -675,8 +694,8 @@ function term(type, msg){
 }
 function copyLog(){ navigator.clipboard.writeText($('#log').innerText).then(() => toast('Terminal copied')); }
 const TC = {
-  help: () => term('info', 'run, export, all, save, files, clear, new <file>, rm <file>, cat <file>, rename <old> <new>, find <text>, stats, check, snapshot, restore, theme <violet|light|forest|sunset>, copylog\nAnything else runs as JavaScript in the running app. Press Ctrl+K for every action.'),
-  run: () => run(), export: () => exportApp(), all: () => exportAll(), save: () => saveProject(),
+  help: () => term('info', 'run, export, all, save, files, clear, new <file>, rm <file>, cat <file>, rename <old> <new>, find <text>, stats, check, snapshot, restore, theme <violet|light|forest|sunset>, copylog, fix, history, test\nAnything else runs as JavaScript in the running app. Press Ctrl+K for every action.'),
+  run: () => run(), export: () => runExport(), all: () => exportAll(), save: () => saveProject(),
   files: () => term('log', Object.keys(S.files).join('\n')),
   clear: () => { $('#log').innerHTML = ''; errN = 0; badge(); },
   new: a => newFile(a[0]), rm: a => delFile(a[0]), cat: a => term('log', S.files[a[0]] ?? 'No such file.'),
@@ -701,7 +720,7 @@ function shortcuts(){
   show(); $('#fno').onclick = hide;
 }
 const CMDS = [
-  ['Run app', () => run()], ['Export app', () => exportApp()], ['Export for all devices', exportAll], ['Download as one HTML file', dlSingle],
+  ['Run app', () => run()], ['Export app', runExport], ['Export for all devices', exportAll], ['Download as one HTML file', dlSingle],
   ['Save project file', () => saveProject()], ['Open project file', () => $('#prjFile').click()], ['New project', newProject], ['Start from a template', pickTemplate],
   ['Insert snippet', snippet], ['Format code', fmt], ['Find and replace', findOpen], ['Project settings', settings], ['Create a logo', logoMaker],
   ['Upload logo', () => $('#upFile').click()], ['Add image or sound', () => $('#assetFile').click()], ['New file', () => newFile()],
@@ -729,59 +748,6 @@ const le32 = n => [n & 255, n >>> 8 & 255, n >>> 16 & 255, n >>> 24 & 255];
 const be32 = n => le32(n).reverse();
 const both32 = n => [...le32(n), ...be32(n)];
 const both16 = n => [n & 255, n >> 8 & 255, n >> 8 & 255, n & 255];
-function isoBuild(entries, vol){
-  const SS = 2048, enc = s => new TextEncoder().encode(s), ps = (s, n) => enc(s.padEnd(n, ' ').slice(0, n));
-  const now = new Date(), z = (x, l = 2) => String(x).padStart(l, '0');
-  const T = z(now.getUTCFullYear(), 4) + z(now.getUTCMonth() + 1) + z(now.getUTCDate()) + z(now.getUTCHours()) + z(now.getUTCMinutes()) + z(now.getUTCSeconds()) + '00';
-  const D7 = [now.getUTCFullYear() - 1900, now.getUTCMonth() + 1, now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), 0];
-  const mk = n => ({dirs:{}, files:[], name:n});
-  const root = mk('');
-  entries.forEach(e => { const p = e.path.split('/'), f = p.pop(); p.reduce((d, x) => d.dirs[x] || (d.dirs[x] = mk(x)), root).files.push({name:f, data:e.data, mode:e.mode}); });
-  const list = [root]; root.num = 1; root.parent = root;
-  let dn = 0, fn = 0;
-  for (let i = 0; i < list.length; i++) {
-    const d = list[i];
-    Object.values(d.dirs).forEach(c => { c.parent = d; c.num = list.length + 1; c.id = 'D' + String(++dn).padStart(7, '0'); list.push(c); });
-    d.files.forEach(f => { f.id = 'F' + String(++fn).padStart(7, '0') + '.;1'; });
-  }
-  const PX = (m, l) => [0x50, 0x58, 36, 1, ...both32(m), ...both32(l), ...both32(0), ...both32(0)];
-  const NM = s => { const b = [...enc(s)]; return [0x4e, 0x4d, 5 + b.length, 1, 0, ...b]; };
-  const SPRR = [0x53, 0x50, 7, 1, 0xbe, 0xef, 0, 0x52, 0x52, 5, 1, 0x89];
-  const rec = (lba, size, dir, id, su) => {
-    const n = 33 + id.length + (id.length % 2 ? 0 : 1), pad = (n + su.length) % 2;
-    return [n + su.length + pad, 0, ...both32(lba), ...both32(size), ...D7, dir ? 2 : 0, 0, 0, ...both16(1), id.length, ...id, ...(id.length % 2 ? [] : [0]), ...su, ...(pad ? [0] : [])];
-  };
-  const dirBytes = d => {
-    const rs = [rec(d.lba || 0, d.size || SS, 1, [0], [...(d === root ? SPRR : []), ...PX(0o40755, 2)]), rec(d.parent.lba || 0, d.parent.size || SS, 1, [1], PX(0o40755, 2))];
-    Object.values(d.dirs).forEach(c => rs.push(rec(c.lba || 0, c.size || SS, 1, [...enc(c.id)], [...NM(c.name), ...PX(0o40755, 2)])));
-    d.files.forEach(f => rs.push(rec(f.lba || 0, f.data.length, 0, [...enc(f.id)], [...NM(f.name), ...PX(0o100000 | f.mode, 1)])));
-    const out = [];
-    rs.forEach(r => { if (out.length % SS + r.length > SS) while (out.length % SS) out.push(0); out.push(...r); });
-    while (out.length % SS) out.push(0);
-    return Uint8Array.from(out);
-  };
-  list.forEach(d => { d.size = dirBytes(d).length; });
-  let lba = 20; const all = [];
-  list.forEach(d => { d.lba = lba; lba += d.size / SS; });
-  list.forEach(d => d.files.forEach(f => { f.lba = lba; lba += Math.ceil(f.data.length / SS); all.push(f); }));
-  const pt = be => {
-    const a = [];
-    list.forEach(d => {
-      const id = d === root ? [0] : [...enc(d.id)], n = d.parent.num, s = be ? [n >> 8 & 255, n & 255] : [n & 255, n >> 8 & 255];
-      a.push(id.length, 0, ...(be ? be32 : le32)(d.lba), ...s, ...id); if (id.length % 2) a.push(0);
-    });
-    return a;
-  };
-  const ptL = pt(false), ptM = pt(true), img = new Uint8Array(lba * SS), v = new Uint8Array(SS), put = (o, a) => v.set(a, o);
-  v[0] = 1; put(1, enc('CD001')); v[6] = 1; put(8, ps('', 32)); put(40, ps(vol, 32)); put(80, both32(lba));
-  put(120, both16(1)); put(124, both16(1)); put(128, both16(SS)); put(132, both32(ptL.length)); put(140, le32(18)); put(148, be32(19));
-  put(156, rec(root.lba, root.size, 1, [0], []));
-  v.fill(32, 190, 813); put(813, [...enc(T), 0]); put(830, [...enc(T), 0]); put(847, [...enc('0'.repeat(16)), 0]); put(864, [...enc(T), 0]); v[881] = 1;
-  img.set(v, 16 * SS); img.set([255, 67, 68, 48, 48, 49, 1], 17 * SS); img.set(ptL, 18 * SS); img.set(ptM, 19 * SS);
-  list.forEach(d => img.set(dirBytes(d), d.lba * SS));
-  all.forEach(f => img.set(f.data, f.lba * SS));
-  return img;
-}
 function icoBlob(list){
   let off = 6 + 16 * list.length; const dir = [], data = [];
   list.forEach(([s, b]) => { dir.push(s >= 256 ? 0 : s, s >= 256 ? 0 : s, 0, 0, 1, 0, 32, 0, ...le32(b.length), ...le32(off)); off += b.length; data.push(b); });
@@ -827,24 +793,27 @@ async function nativePkg(plat, c){
     const plist = ['<?xml version="1.0" encoding="UTF-8"?>', '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">', '<plist version="1.0"><dict>',
       '<key>CFBundleName</key><string>' + nm + '</string>', '<key>CFBundleDisplayName</key><string>' + nm + '</string>', '<key>CFBundleIdentifier</key><string>' + c.pkg + '</string>',
       '<key>CFBundleVersion</key><string>' + c.V + '</string>', '<key>CFBundleShortVersionString</key><string>' + c.V + '</string>', '<key>CFBundleExecutable</key><string>launcher</string>',
-      '<key>CFBundleIconFile</key><string>icon</string>', '<key>CFBundlePackageType</key><string>APPL</string>', '<key>LSMinimumSystemVersion</key><string>10.13</string>',
-      '<key>NSHighResolutionCapable</key><true/>', '</dict></plist>', ''].join('\n');
+      '<key>CFBundleIconFile</key><string>icon</string>', '<key>CFBundlePackageType</key><string>APPL</string>', '<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>',
+      '<key>NSPrincipalClass</key><string>NSApplication</string>', '<key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>',
+      '<key>LSMinimumSystemVersion</key><string>10.13</string>', '<key>NSHighResolutionCapable</key><true/>', '</dict></plist>', ''].join('\n');
     const launcher = ['#!/bin/sh', 'D="$(cd "$(dirname "$0")/../Resources" && pwd)"', 'P="$D/app/index.html"', 'U="file://$(printf %s "$P" | sed \'s/ /%20/g\')"', 'L="$HOME/Library/Logs/' + nm + '.log"',
-      'fallback() {', '  for a in "Google Chrome" "Microsoft Edge" "Brave Browser" "Chromium"; do', '    if [ -d "/Applications/$a.app" ] || [ -d "$HOME/Applications/$a.app" ]; then', '      open -na "$a" --args --app="$U" --window-size=' + c.WW + ',' + c.WH + ';', '      exit 0', '    fi', '  done', '  open "$P"', '  exit 0', '}',
+      'fallback() {', '  /usr/bin/osascript -e "display notification \\"Opened in your browser instead. See ~/Library/Logs/' + nm + '.log\\" with title \\"' + nm + '\\"" >/dev/null 2>&1',
+      '  for a in "Google Chrome" "Microsoft Edge" "Brave Browser" "Chromium"; do', '    if [ -d "/Applications/$a.app" ] || [ -d "$HOME/Applications/$a.app" ]; then', '      open -na "$a" --args --app="$U" --window-size=' + c.WW + ',' + c.WH + ';', '      exit 0', '    fi', '  done', '  open "$P"', '  exit 0', '}',
       '/usr/bin/osascript -l JavaScript "$D/main.js" "$P" "' + nm + '" "$D/icon.png" ' + c.WW + ' ' + c.WH + ' >"$L" 2>&1 &', 'J=$!', 'sleep 3', 'if kill -0 $J 2>/dev/null; then wait $J; exit 0; fi', 'fallback', ''].join('\n');
-    const readme = 'HOW TO OPEN ' + nm.toUpperCase() + '\n\n1. Drag ' + nm + '.app to your Applications folder.\n2. Double-click it.\n3. If macOS blocks it: open System Settings > Privacy & Security, scroll down and click Open Anyway.\n   Or open Terminal and paste this one line:\n   xattr -cr "/Applications/' + nm + '.app" && open "/Applications/' + nm + '.app"\n\nStill stuck? Double-click ' + nm + '.html in this window. It opens the app in your browser.\n';
-    const E = [
-      {path:A + 'Info.plist', data:t(plist), mode:0o644}, {path:A + 'MacOS/launcher', data:t(launcher), mode:0o755}, {path:A + 'Resources/main.js', data:t(MAINJS), mode:0o644},
-      {path:A + 'Resources/icon.icns', data:new Uint8Array(await icnsBlob([['ic07', ic[0][1]], ['ic08', ic[1][1]], ['ic09', ic[2][1]]]).arrayBuffer()), mode:0o644},
-      {path:A + 'Resources/icon.png', data:p512, mode:0o644}, {path:A + 'Resources/app/index.html', data:t(html), mode:0o644}, {path:'README.txt', data:t(readme), mode:0o644}, {path:nm + '.html', data:t(html), mode:0o644}
-    ];
-    const vol = nm.toUpperCase().replace(/[^A-Z0-9_]/g, '_').slice(0, 32) || 'APP';
-    return {name:nm.replace(/ /g, '-') + '.dmg', blob:new Blob([isoBuild(E, vol)], {type:'application/x-apple-diskimage'})};
+    const readme = 'HOW TO OPEN ' + nm.toUpperCase() + '\n\n1. Drag ' + nm + '.app to your Applications folder.\n2. Double-click it.\n3. If macOS blocks it: open System Settings > Privacy & Security, scroll down and click Open Anyway.\n   Or open Terminal and paste this one line:\n   xattr -cr "/Applications/' + nm + '.app" && open "/Applications/' + nm + '.app"\n\nStill stuck? Double-click ' + nm + '.html next to this file. It opens the app in your browser.\n';
+    const mz = new JSZip(), X = {unixPermissions:0o100755}, W = {unixPermissions:0o100644};
+    mz.file(A + 'Info.plist', plist, W); mz.file(A + 'MacOS/launcher', launcher, X); mz.file(A + 'Resources/main.js', MAINJS, W);
+    mz.file(A + 'Resources/icon.icns', await icnsBlob([['ic07', ic[0][1]], ['ic08', ic[1][1]], ['ic09', ic[2][1]]]).arrayBuffer(), W);
+    mz.file(A + 'Resources/icon.png', p512, W); mz.file(A + 'Resources/app/index.html', html, W); mz.file('README.txt', readme, W); mz.file(nm + '.html', html, W);
+    const blob = await mz.generateAsync({type:'blob', platform:'UNIX', compression:'DEFLATE'});
+    await verifyMac(blob, A);
+    return {name:nm.replace(/ /g, '-') + '-mac.zip', blob};
   }
   const z = new JSZip(); z.file('app/index.html', html); z.file('icon.png', p512);
   if (plat === 'windows') {
     z.file('icon.ico', await icoBlob(await pngs([16, 32, 48, 256])).arrayBuffer());
     const b64 = await z.generateAsync({type:'base64', compression:'DEFLATE'});
+    await selfTest(b64, ['app/index.html', 'icon.png', 'icon.ico']);
     const ps = [
       "$ErrorActionPreference = 'Stop'", "$name = '" + nm + "'", "$id = '" + c.id + "'", "$b64 = '" + b64 + "'",
       "try {",
@@ -865,11 +834,15 @@ async function nativePkg(plat, c){
       "    $s.IconLocation = (Join-Path $dir 'icon.ico')",
       "    $s.Save()",
       "  }",
+      "  if (-not (Test-Path $page)) { throw 'The app files were not installed.' }",
+      "  if (-not (Test-Path (Join-Path $desktop ($name + '.lnk')))) { throw 'The Desktop shortcut was not created.' }",
       "  Write-Host ('Installed ' + $name + '. Its icon is on your Desktop and in the Start menu.')",
       "  Start-Process (Join-Path $desktop ($name + '.lnk'))",
       "  Start-Sleep -Seconds 2",
       "} catch {",
+      "  Set-Content -LiteralPath (Join-Path $env:TEMP ($id + '-install.log')) -Value ($_ | Out-String)",
       "  Write-Host $_",
+      "  Write-Host ('Details saved to ' + (Join-Path $env:TEMP ($id + '-install.log')))",
       "  Read-Host 'Press Enter to close'",
       "}"
     ];
@@ -877,21 +850,126 @@ async function nativePkg(plat, c){
     return {name:nm.replace(/ /g, '-') + '-Setup.bat', blob:new Blob([bat], {type:'application/octet-stream'})};
   }
   z.file('run.sh', '#!/bin/sh\nF="$(dirname "$0")/app/index.html"\nfor b in google-chrome chromium chromium-browser microsoft-edge brave-browser; do\n  if command -v $b >/dev/null 2>&1; then exec $b --app="file://$F" --window-size=' + c.WW + ',' + c.WH + '; fi\ndone\nexec xdg-open "$F"\n');
-  const b64 = lines76(await z.generateAsync({type:'base64', compression:'DEFLATE'}));
+  const raw64 = await z.generateAsync({type:'base64', compression:'DEFLATE'});
+  await selfTest(raw64, ['app/index.html', 'icon.png', 'run.sh']);
+  const b64 = lines76(raw64);
   const sh = ['#!/bin/sh', "NAME='" + nm + "'", "ID='" + c.id + "'", 'D="$HOME/.local/share/$ID"', 'mkdir -p "$D" "$HOME/.local/share/applications"', 'T="$(mktemp)"',
     "sed '1,/^__PAYLOAD__$/d' \"$0\" | base64 -d > \"$T\"",
     "if command -v python3 >/dev/null 2>&1; then python3 -c 'import sys,zipfile;zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' \"$T\" \"$D\"; else unzip -oq \"$T\" -d \"$D\"; fi",
     'rm -f "$T"',
     "printf '[Desktop Entry]\\nType=Application\\nName=%s\\nExec=sh \"%s/run.sh\"\\nIcon=%s/icon.png\\nTerminal=false\\nCategories=Utility;\\n' \"$NAME\" \"$D\" \"$D\" > \"$HOME/.local/share/applications/$ID.desktop\"",
-    'echo "Installed $NAME. Find it in your app menu."', 'sh "$D/run.sh" >/dev/null 2>&1 &', 'exit 0', '__PAYLOAD__', b64, ''].join('\n');
+    'chmod +x "$HOME/.local/share/applications/$ID.desktop" 2>/dev/null', 'if [ -d "$HOME/Desktop" ]; then cp "$HOME/.local/share/applications/$ID.desktop" "$HOME/Desktop/" && chmod +x "$HOME/Desktop/$ID.desktop" && gio set "$HOME/Desktop/$ID.desktop" metadata::trusted true 2>/dev/null; fi', 'update-desktop-database "$HOME/.local/share/applications" 2>/dev/null', '[ -f "$D/app/index.html" ] || { echo "Install failed: app files are missing."; exit 1; }', 'echo "Installed $NAME. Find it in your app menu."', 'sh "$D/run.sh" >/dev/null 2>&1 &', 'exit 0', '__PAYLOAD__', b64, ''].join('\n');
   return {name:nm.replace(/ /g, '-') + '-install.sh', blob:new Blob([sh], {type:'application/x-sh'})};
 }
-function deliver(parent, r, n, b){
+const HK = 'appstudio.exports';
+const STEPS = {
+  mac: () => ['Find the zip in your Downloads folder. Safari unzips it for you; otherwise double-click it.', 'Drag the app into your Applications folder.', 'Double-click it. If macOS says it cannot verify the app, open System Settings, then Privacy & Security, scroll down and click Open Anyway.', 'Faster: copy the command below, paste it into Terminal and press Return.'],
+  windows: () => ['Double-click the .bat file.', 'If Windows SmartScreen appears, click More info, then Run anyway.', 'The app installs, adds icons to your Desktop and Start menu, and opens.', 'Next time, open it from the icon.'],
+  linux: () => ['Open a terminal in the folder with the file.', 'Run the command below.', 'Find the app in your app menu or on your Desktop.'],
+  web: () => ['Double-click the .html file. It opens in your browser.'],
+  android: () => ['Unzip the file and open the folder in Android Studio.', 'Press Run with a phone or emulator connected.'],
+  ios: () => ['Put the unzipped folder on GitHub Pages or any https host.', 'Open the page in Safari, tap Share, then Add to Home Screen.'],
+  chromebook: () => ['Put the unzipped folder on GitHub Pages or any https host.', 'Open it in Chrome and click the install icon in the address bar.']
+};
+const HELP = {
+  mac: ['Opens as a folder or in an archive tool: that was the old .dmg. Export again to get a .zip with a real app inside.', 'Nothing happens on double-click: macOS is blocking an unverified app. Use System Settings, Privacy & Security, Open Anyway, or the Terminal command from the export window.', 'Your browser opens instead of a window: the native window could not start, so the app opened in a browser. Details are in ~/Library/Logs.', 'Always works: double-click the .html file inside the zip.'],
+  windows: ['SmartScreen blocks it: click More info, then Run anyway.', 'Nothing seems to happen: look for the new icon on your Desktop and in the Start menu.', 'An error window appears: it names a log file in your Temp folder. Send me what it says.', 'Always works: export Website and double-click the .html file.'],
+  linux: ['Permission denied: run it with sh, not by double-clicking.', 'No icon appears: log out and in, or run sh ~/.local/share/yourapp/run.sh.', 'Always works: export Website and open the .html file.'],
+  web: ['The file opens as text: right-click it and choose Open With, then your browser.', 'The page is blank: type check in the terminal to find errors.'],
+  android: ['Gradle sync fails: update Android Studio and press Sync again.', 'Always works: export Website and open it in Chrome on the phone.'],
+  ios: ['Add to Home Screen is missing: open the page in Safari, not in another app.', 'The page must be on https. GitHub Pages works.'],
+  chromebook: ['No install icon: the page must be on https. GitHub Pages works.', 'Always works: export Website and open the .html in Chrome.']
+};
+async function sha(blob){
+  const h = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function logExport(n, size, h){
+  try { const a = JSON.parse(localStorage.getItem(HK) || '[]'); a.unshift({n, size, sha:h, t:Date.now(), p:S.plat}); localStorage.setItem(HK, JSON.stringify(a.slice(0, 20))); } catch (e) {}
+}
+function howDialog(n, h){
+  const nm = label(), st = (STEPS[S.plat] || STEPS.web)();
+  const cmd = S.plat === 'mac' ? 'xattr -cr "/Applications/' + nm + '.app" && open "/Applications/' + nm + '.app"' : S.plat === 'linux' ? 'sh ~/Downloads/' + n : '';
+  $('#box').innerHTML = '<h3>' + n + ' is ready</h3><ol>' + st.map(x => '<li>' + x + '</li>').join('') + '</ol>' + (cmd ? '<pre>' + cmd + '</pre>' : '') + (h ? '<div class="tag">SHA-256 ' + h.slice(0, 24) + '…</div>' : '') +
+    '<div class="row">' + (cmd ? '<button class="btn primary" id="cpc">Copy command</button>' : '') + '<button class="btn" id="opb">Test built app</button><button class="btn" id="hlp">Won\u2019t open?</button><button class="btn" id="fno">Done</button></div>';
+  show();
+  if (cmd) $('#cpc').onclick = () => navigator.clipboard.writeText(cmd).then(() => toast('Command copied'));
+  $('#opb').onclick = openBuilt; $('#hlp').onclick = troubleshoot; $('#fno').onclick = hide;
+}
+function troubleshoot(){
+  $('#box').innerHTML = '<h3>App won\u2019t open? (' + P[S.plat].n + ')</h3><ol>' + (HELP[S.plat] || HELP.web).map(x => '<li>' + x + '</li>').join('') + '</ol><div class="row"><button class="btn" id="opb">Test built app</button><button class="btn" id="fno">Close</button></div>';
+  show(); $('#opb').onclick = openBuilt; $('#fno').onclick = hide;
+}
+async function openBuilt(){
+  if (S.files['index.html'] === undefined) return term('error', 'index.html is missing.');
+  const u = URL.createObjectURL(new Blob([await bundle('')], {type:'text/html'}));
+  window.open(u, '_blank'); setTimeout(() => URL.revokeObjectURL(u), 60000);
+}
+function smoke(html){
+  return new Promise(res => {
+    const f = document.createElement('iframe'), errs = [];
+    f.setAttribute('sandbox', 'allow-scripts'); f.style.cssText = 'position:fixed;width:300px;height:300px;left:-9999px';
+    const on = e => { if (e.source === f.contentWindow && e.data && e.data.studio && e.data.t === 'error') errs.push(e.data.m); };
+    addEventListener('message', on);
+    f.srcdoc = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + BRIDGE) : BRIDGE + html;
+    document.body.appendChild(f);
+    setTimeout(() => { removeEventListener('message', on); f.remove(); res(errs); }, 1500);
+  });
+}
+async function preflight(){
+  const F = S.files, bad = [], warn = [];
+  if (F['index.html'] === undefined) bad.push('index.html is missing.');
+  for (const f in F) {
+    if (f.endsWith('.js')) { try { new Function(F[f]); } catch (e) { bad.push(f + ': ' + e.message); } }
+    if (f.endsWith('.json')) { try { JSON.parse(F[f] || '{}'); } catch (e) { bad.push(f + ' is not valid JSON.'); } }
+  }
+  if (!/[A-Za-z0-9]/.test(S.name)) bad.push('Give your app a name with letters or numbers.');
+  else if (/[^\w \-]/.test(S.name)) warn.push('The app name has special characters. Files will be named "' + label() + '".');
+  if (S.logo) { try { await loadImg(S.logo); } catch (e) { S.logo = null; updateLogo(); warn.push('Your logo could not be read, so the default logo is used.'); } }
+  if (JSON.stringify(F).length + Object.values(S.assets).reduce((n, a) => n + a.length, 0) > 40e6) warn.push('The app is over 40 MB. Export may be slow.');
+  if (!bad.length) {
+    const errs = await smoke(await bundle(''));
+    errs.slice(0, 3).forEach(m => warn.push('The built app showed an error when it started: ' + m));
+  }
+  return {bad, warn};
+}
+async function selfTest(b64, need){
+  const zz = await JSZip.loadAsync(b64, {base64:true}), miss = need.filter(f => !zz.files[f] || zz.files[f].dir);
+  if (miss.length) throw new Error('Self-test failed. Missing: ' + miss.join(', '));
+  term('ok', '✔ Self-test passed: all ' + need.length + ' required files are inside.');
+}
+async function verifyMac(blob, A){
+  const zz = await JSZip.loadAsync(blob), need = ['Info.plist', 'MacOS/launcher', 'Resources/main.js', 'Resources/icon.icns', 'Resources/app/index.html'];
+  const miss = need.filter(f => !zz.files[A + f]);
+  if (miss.length) throw new Error('Self-test failed. Missing: ' + miss.join(', '));
+  const pl = await zz.files[A + 'Info.plist'].async('string');
+  if (new DOMParser().parseFromString(pl, 'application/xml').querySelector('parsererror')) throw new Error('Self-test failed. Info.plist is not valid.');
+  const p = zz.files[A + 'MacOS/launcher'].unixPermissions;
+  if (p != null && !(p & 0o111)) throw new Error('Self-test failed. The launcher is not marked executable.');
+  term('ok', '✔ Self-test passed: ' + need.length + ' files, valid Info.plist, ' + (p == null ? 'launcher present.' : 'launcher is executable.'));
+}
+async function deliver(parent, r, n, b){
   if (parent) { r.file(n, b); return; }
   dl(n, b);
-  const how = {mac:'Open the .dmg and drag the app to Applications, then double-click it. If macOS blocks it: System Settings > Privacy & Security > Open Anyway. The README inside the .dmg has a one-line Terminal fix.', windows:'Double-click it. It installs the app, adds Desktop and Start menu icons, and opens it. If SmartScreen warns, choose More info, then Run anyway.', linux:'Run: sh ' + n + '   It adds the app to your app menu and opens it.', web:'Double-click it to open the app.'};
-  term('ok', '✔ Exported ' + n + '. ' + how[S.plat]);
+  let h = ''; try { h = await sha(b); } catch (e) {}
+  logExport(n, b.size, h);
+  term('ok', '✔ Exported ' + n + ' (' + (b.size / 1048576).toFixed(2) + ' MB)' + (h ? '  SHA-256 ' + h.slice(0, 16) + '…' : ''));
+  howDialog(n, h);
 }
+let busy = false;
+async function runExport(){
+  if (busy) return toast('Export is already running');
+  if (typeof JSZip === 'undefined') return term('error', 'The export engine is not loaded. Check your connection and reload the page.');
+  busy = true; const b = $('#expBtn'); b.disabled = true; b.textContent = 'Exporting…';
+  try { await exportApp(); } finally { busy = false; b.disabled = false; b.textContent = 'Export app'; }
+}
+TC.fix = troubleshoot; TC.test = openBuilt;
+TC.history = () => {
+  try { const a = JSON.parse(localStorage.getItem(HK) || '[]'); if (!a.length) return term('info', 'No exports yet.'); a.forEach(x => term('log', new Date(x.t).toLocaleString() + '  ' + x.n + '  ' + (x.size / 1048576).toFixed(2) + ' MB  ' + (x.sha || '').slice(0, 12))); }
+  catch (e) { term('warn', 'History is not available.'); }
+};
+CMDS.push(['App won\u2019t open? Get help', troubleshoot], ['Test built app in a new tab', openBuilt], ['Export history', () => TC.history()]);
+$('#helpBtn').onclick = troubleshoot;
 renderResume();
 </script>
 </body>
