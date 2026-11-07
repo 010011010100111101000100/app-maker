@@ -829,11 +829,14 @@ async function nativePkg(plat, c){
       '<key>CFBundleVersion</key><string>' + c.V + '</string>', '<key>CFBundleShortVersionString</key><string>' + c.V + '</string>', '<key>CFBundleExecutable</key><string>launcher</string>',
       '<key>CFBundleIconFile</key><string>icon</string>', '<key>CFBundlePackageType</key><string>APPL</string>', '<key>LSMinimumSystemVersion</key><string>10.13</string>',
       '<key>NSHighResolutionCapable</key><true/>', '</dict></plist>', ''].join('\n');
-    const launcher = '#!/bin/sh\nD="$(cd "$(dirname "$0")/../Resources" && pwd)"\nexec /usr/bin/osascript -l JavaScript "$D/main.js" "$D/app/index.html" "' + nm + '" "$D/icon.png" ' + c.WW + ' ' + c.WH + '\n';
+    const launcher = ['#!/bin/sh', 'D="$(cd "$(dirname "$0")/../Resources" && pwd)"', 'P="$D/app/index.html"', 'U="file://$(printf %s "$P" | sed \'s/ /%20/g\')"', 'L="$HOME/Library/Logs/' + nm + '.log"',
+      'fallback() {', '  for a in "Google Chrome" "Microsoft Edge" "Brave Browser" "Chromium"; do', '    if [ -d "/Applications/$a.app" ] || [ -d "$HOME/Applications/$a.app" ]; then', '      open -na "$a" --args --app="$U" --window-size=' + c.WW + ',' + c.WH + ';', '      exit 0', '    fi', '  done', '  open "$P"', '  exit 0', '}',
+      '/usr/bin/osascript -l JavaScript "$D/main.js" "$P" "' + nm + '" "$D/icon.png" ' + c.WW + ' ' + c.WH + ' >"$L" 2>&1 &', 'J=$!', 'sleep 3', 'if kill -0 $J 2>/dev/null; then wait $J; exit 0; fi', 'fallback', ''].join('\n');
+    const readme = 'HOW TO OPEN ' + nm.toUpperCase() + '\n\n1. Drag ' + nm + '.app to your Applications folder.\n2. Double-click it.\n3. If macOS blocks it: open System Settings > Privacy & Security, scroll down and click Open Anyway.\n   Or open Terminal and paste this one line:\n   xattr -cr "/Applications/' + nm + '.app" && open "/Applications/' + nm + '.app"\n\nStill stuck? Double-click ' + nm + '.html in this window. It opens the app in your browser.\n';
     const E = [
       {path:A + 'Info.plist', data:t(plist), mode:0o644}, {path:A + 'MacOS/launcher', data:t(launcher), mode:0o755}, {path:A + 'Resources/main.js', data:t(MAINJS), mode:0o644},
       {path:A + 'Resources/icon.icns', data:new Uint8Array(await icnsBlob([['ic07', ic[0][1]], ['ic08', ic[1][1]], ['ic09', ic[2][1]]]).arrayBuffer()), mode:0o644},
-      {path:A + 'Resources/icon.png', data:p512, mode:0o644}, {path:A + 'Resources/app/index.html', data:t(html), mode:0o644}
+      {path:A + 'Resources/icon.png', data:p512, mode:0o644}, {path:A + 'Resources/app/index.html', data:t(html), mode:0o644}, {path:'README.txt', data:t(readme), mode:0o644}, {path:nm + '.html', data:t(html), mode:0o644}
     ];
     const vol = nm.toUpperCase().replace(/[^A-Z0-9_]/g, '_').slice(0, 32) || 'APP';
     return {name:nm.replace(/ /g, '-') + '.dmg', blob:new Blob([isoBuild(E, vol)], {type:'application/x-apple-diskimage'})};
@@ -886,7 +889,7 @@ async function nativePkg(plat, c){
 function deliver(parent, r, n, b){
   if (parent) { r.file(n, b); return; }
   dl(n, b);
-  const how = {mac:'Open the .dmg and double-click the app inside (right-click, Open the first time), or drag it to Applications.', windows:'Double-click it. It installs the app, adds Desktop and Start menu icons, and opens it. If SmartScreen warns, choose More info, then Run anyway.', linux:'Run: sh ' + n + '   It adds the app to your app menu and opens it.', web:'Double-click it to open the app.'};
+  const how = {mac:'Open the .dmg and drag the app to Applications, then double-click it. If macOS blocks it: System Settings > Privacy & Security > Open Anyway. The README inside the .dmg has a one-line Terminal fix.', windows:'Double-click it. It installs the app, adds Desktop and Start menu icons, and opens it. If SmartScreen warns, choose More info, then Run anyway.', linux:'Run: sh ' + n + '   It adds the app to your app menu and opens it.', web:'Double-click it to open the app.'};
   term('ok', '✔ Exported ' + n + '. ' + how[S.plat]);
 }
 renderResume();
