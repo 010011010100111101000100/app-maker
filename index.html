@@ -159,10 +159,10 @@ const P = {
   android:{n:'Android', i:'📱', t:'phone', d:'Phones and tablets. Exports an Android Studio project.'},
   ios:{n:'iPhone & iPad', i:'🍎', t:'phone', d:'Installable web app for Add to Home Screen.'},
   chromebook:{n:'Chromebook', i:'💻', t:'desk', d:'Installable app that opens in its own window.'},
-  mac:{n:'Mac', i:'🖥️', t:'desk', d:'Double-click launcher plus an Electron project.'},
-  windows:{n:'Windows', i:'🪟', t:'desk', d:'Double-click launcher plus an Electron project.'},
-  linux:{n:'Linux', i:'🐧', t:'desk', d:'Double-click launcher plus an Electron project.'},
-  web:{n:'Website', i:'🌐', t:'desk', d:'One self-contained page that opens anywhere.'}
+  mac:{n:'Mac', i:'🖥️', t:'desk', d:'Exports a real .dmg with the app inside.'},
+  windows:{n:'Windows', i:'🪟', t:'desk', d:'One-file installer. Adds Start menu and Desktop icons.'},
+  linux:{n:'Linux', i:'🐧', t:'desk', d:'One-file installer. Adds the app to your app menu.'},
+  web:{n:'Website', i:'🌐', t:'desk', d:'One .html file that opens with a double-click.'}
 };
 const START = {
  'index.html':'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width,initial-scale=1">\n  <title>My App</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <main>\n    <h1>Hello!</h1>\n    <button id="btn">Tap me</button>\n    <p id="out"></p>\n  </main>\n  <script src="app.js"><\/script>\n</body>\n</html>',
@@ -293,7 +293,12 @@ async function exportApp(parent){
       put('README.md', '# ' + S.name + ' (Android)\n\n1. Install Android Studio.\n2. Choose File > Open and pick this folder. Let Gradle sync.\n3. Plug in a phone or start an emulator, then press Run.\n\nThe app installs with your logo as its icon. Tap the icon to open it.\n');
     }
 
-    if (S.plat === 'web' || S.plat === 'ios' || S.plat === 'chromebook') {
+    if (S.plat === 'web') {
+      deliver(parent, r, id + '.html', new Blob([await bundle('')], {type:'text/html'}));
+      return;
+    }
+
+    if (S.plat === 'ios' || S.plat === 'chromebook') {
       const ios = '<link rel="apple-touch-icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="' + label() + '">';
       const pwa = '<link rel="manifest" href="manifest.webmanifest">' + ios + (S.set.offline ? '<script>try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}<\/script>' : '');
       put('index.html', await bundle(pwa));
@@ -305,15 +310,9 @@ async function exportApp(parent){
     }
 
     if (S.plat === 'mac' || S.plat === 'windows' || S.plat === 'linux') {
-      const mac = S.plat === 'mac', win = S.plat === 'windows', nm = label();
-      put('app/index.html', await bundle(''));
-      put('package.json', JSON.stringify({name:id, productName:S.name, version:V, author:S.set.author || undefined, description:S.set.desc || undefined, main:'main.js', scripts:{start:'electron .', build:'electron-builder'}, devDependencies:{electron:'^31.0.0','electron-builder':'^24.13.3'}, build:{appId:pkg, productName:S.name, files:['main.js','app/**','icon.png'], icon:'icon.png', [mac?'mac':win?'win':'linux']:{target:mac?'dmg':win?'nsis':'AppImage'}}}, null, 2));
-      put('main.js', 'const { app, BrowserWindow } = require("electron");\nconst path = require("path");\nfunction createWindow() {\n  const win = new BrowserWindow({ width: ' + WW + ', height: ' + WH + ', backgroundColor: ' + JSON.stringify(S.set.bg) + ', title: ' + JSON.stringify(S.name) + ', icon: path.join(__dirname, "icon.png") });\n  win.setMenuBarVisibility(false);\n  win.loadFile(path.join(__dirname, "app", "index.html"));\n}\napp.whenReady().then(createWindow);\napp.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });\napp.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });\n');
-      put('icon.png', await icon(512));
-      if (win) put('Open ' + nm + '.bat', ['@echo off', 'set "F=%~dp0app\\index.html"', 'start "" msedge --app="%F%" --window-size=' + WW + ',' + WH + ' || start "" chrome --app="%F%" --window-size=' + WW + ',' + WH + ' || start "" "%F%"', ''].join('\r\n'));
-      if (mac) put('Open ' + nm + '.command', '#!/bin/bash\ncd "$(dirname "$0")"\nF="$PWD/app/index.html"\nif [ -d "/Applications/Google Chrome.app" ]; then\n  open -na "Google Chrome" --args --app="file://$F" --window-size=' + WW + ',' + WH + '\nelif [ -d "/Applications/Microsoft Edge.app" ]; then\n  open -na "Microsoft Edge" --args --app="file://$F" --window-size=' + WW + ',' + WH + '\nelse\n  open "$F"\nfi\n', {unixPermissions:'755'});
-      if (S.plat === 'linux') put('Open ' + nm + '.sh', '#!/bin/sh\ncd "$(dirname "$0")"\nF="$PWD/app/index.html"\nfor b in google-chrome chromium chromium-browser microsoft-edge; do\n  if command -v $b >/dev/null 2>&1; then exec $b --app="file://$F" --window-size=' + WW + ',' + WH + '; fi\ndone\nexec xdg-open "$F"\n', {unixPermissions:'755'});
-      put('README.md', '# ' + S.name + ' (' + P[S.plat].n + ')\n\nDouble-click "Open ' + nm + '.' + (win ? 'bat' : mac ? 'command' : 'sh') + '" to launch the app in its own window.\n' + (mac ? '\nThe first time, right-click the file and choose Open so macOS allows it.\n' : '') + (S.plat === 'linux' ? '\nIf it does not start, mark the file as executable in its Properties.\n' : '') + '\nWant a real installed app with your logo as its icon?\n1. Install Node.js from nodejs.org.\n2. Run `npm install`, then `npm run build`.\n3. Your installer is in the `dist` folder.\n');
+      const pk = await nativePkg(S.plat, {nm:label(), id, pkg, V, WW, WH});
+      deliver(parent, r, pk.name, pk.blob);
+      return;
     }
 
     if (parent) return;
@@ -725,6 +724,170 @@ function palette(){
 }
 $('#palBtn').onclick = palette; $('#setBtn').onclick = settings;
 applyPrefs();
+const le32 = n => [n & 255, n >>> 8 & 255, n >>> 16 & 255, n >>> 24 & 255];
+const be32 = n => le32(n).reverse();
+const both32 = n => [...le32(n), ...be32(n)];
+const both16 = n => [n & 255, n >> 8 & 255, n >> 8 & 255, n & 255];
+function isoBuild(entries, vol){
+  const SS = 2048, enc = s => new TextEncoder().encode(s), ps = (s, n) => enc(s.padEnd(n, ' ').slice(0, n));
+  const now = new Date(), z = (x, l = 2) => String(x).padStart(l, '0');
+  const T = z(now.getUTCFullYear(), 4) + z(now.getUTCMonth() + 1) + z(now.getUTCDate()) + z(now.getUTCHours()) + z(now.getUTCMinutes()) + z(now.getUTCSeconds()) + '00';
+  const D7 = [now.getUTCFullYear() - 1900, now.getUTCMonth() + 1, now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), 0];
+  const mk = n => ({dirs:{}, files:[], name:n});
+  const root = mk('');
+  entries.forEach(e => { const p = e.path.split('/'), f = p.pop(); p.reduce((d, x) => d.dirs[x] || (d.dirs[x] = mk(x)), root).files.push({name:f, data:e.data, mode:e.mode}); });
+  const list = [root]; root.num = 1; root.parent = root;
+  let dn = 0, fn = 0;
+  for (let i = 0; i < list.length; i++) {
+    const d = list[i];
+    Object.values(d.dirs).forEach(c => { c.parent = d; c.num = list.length + 1; c.id = 'D' + String(++dn).padStart(7, '0'); list.push(c); });
+    d.files.forEach(f => { f.id = 'F' + String(++fn).padStart(7, '0') + '.;1'; });
+  }
+  const PX = (m, l) => [0x50, 0x58, 36, 1, ...both32(m), ...both32(l), ...both32(0), ...both32(0)];
+  const NM = s => { const b = [...enc(s)]; return [0x4e, 0x4d, 5 + b.length, 1, 0, ...b]; };
+  const SPRR = [0x53, 0x50, 7, 1, 0xbe, 0xef, 0, 0x52, 0x52, 5, 1, 0x89];
+  const rec = (lba, size, dir, id, su) => {
+    const n = 33 + id.length + (id.length % 2 ? 0 : 1), pad = (n + su.length) % 2;
+    return [n + su.length + pad, 0, ...both32(lba), ...both32(size), ...D7, dir ? 2 : 0, 0, 0, ...both16(1), id.length, ...id, ...(id.length % 2 ? [] : [0]), ...su, ...(pad ? [0] : [])];
+  };
+  const dirBytes = d => {
+    const rs = [rec(d.lba || 0, d.size || SS, 1, [0], [...(d === root ? SPRR : []), ...PX(0o40755, 2)]), rec(d.parent.lba || 0, d.parent.size || SS, 1, [1], PX(0o40755, 2))];
+    Object.values(d.dirs).forEach(c => rs.push(rec(c.lba || 0, c.size || SS, 1, [...enc(c.id)], [...NM(c.name), ...PX(0o40755, 2)])));
+    d.files.forEach(f => rs.push(rec(f.lba || 0, f.data.length, 0, [...enc(f.id)], [...NM(f.name), ...PX(0o100000 | f.mode, 1)])));
+    const out = [];
+    rs.forEach(r => { if (out.length % SS + r.length > SS) while (out.length % SS) out.push(0); out.push(...r); });
+    while (out.length % SS) out.push(0);
+    return Uint8Array.from(out);
+  };
+  list.forEach(d => { d.size = dirBytes(d).length; });
+  let lba = 20; const all = [];
+  list.forEach(d => { d.lba = lba; lba += d.size / SS; });
+  list.forEach(d => d.files.forEach(f => { f.lba = lba; lba += Math.ceil(f.data.length / SS); all.push(f); }));
+  const pt = be => {
+    const a = [];
+    list.forEach(d => {
+      const id = d === root ? [0] : [...enc(d.id)], n = d.parent.num, s = be ? [n >> 8 & 255, n & 255] : [n & 255, n >> 8 & 255];
+      a.push(id.length, 0, ...(be ? be32 : le32)(d.lba), ...s, ...id); if (id.length % 2) a.push(0);
+    });
+    return a;
+  };
+  const ptL = pt(false), ptM = pt(true), img = new Uint8Array(lba * SS), v = new Uint8Array(SS), put = (o, a) => v.set(a, o);
+  v[0] = 1; put(1, enc('CD001')); v[6] = 1; put(8, ps('', 32)); put(40, ps(vol, 32)); put(80, both32(lba));
+  put(120, both16(1)); put(124, both16(1)); put(128, both16(SS)); put(132, both32(ptL.length)); put(140, le32(18)); put(148, be32(19));
+  put(156, rec(root.lba, root.size, 1, [0], []));
+  v.fill(32, 190, 813); put(813, [...enc(T), 0]); put(830, [...enc(T), 0]); put(847, [...enc('0'.repeat(16)), 0]); put(864, [...enc(T), 0]); v[881] = 1;
+  img.set(v, 16 * SS); img.set([255, 67, 68, 48, 48, 49, 1], 17 * SS); img.set(ptL, 18 * SS); img.set(ptM, 19 * SS);
+  list.forEach(d => img.set(dirBytes(d), d.lba * SS));
+  all.forEach(f => img.set(f.data, f.lba * SS));
+  return img;
+}
+function icoBlob(list){
+  let off = 6 + 16 * list.length; const dir = [], data = [];
+  list.forEach(([s, b]) => { dir.push(s >= 256 ? 0 : s, s >= 256 ? 0 : s, 0, 0, 1, 0, 32, 0, ...le32(b.length), ...le32(off)); off += b.length; data.push(b); });
+  return new Blob([new Uint8Array([0, 0, 1, 0, list.length, 0, ...dir]), ...data]);
+}
+function icnsBlob(list){
+  const body = []; let len = 8;
+  list.forEach(([t, b]) => { body.push(new Uint8Array([...new TextEncoder().encode(t), ...be32(b.length + 8)]), b); len += b.length + 8; });
+  return new Blob([new Uint8Array([105, 99, 110, 115, ...be32(len)]), ...body]);
+}
+const pngs = sizes => Promise.all(sizes.map(async s => [s, new Uint8Array(await (await icon(s)).arrayBuffer())]));
+const MAINJS = [
+ "ObjC.import('Cocoa');",
+ "ObjC.import('WebKit');",
+ "ObjC.registerSubclass({name: 'StudioDelegate', protocols: ['NSApplicationDelegate'], methods: {'applicationShouldTerminateAfterLastWindowClosed:': {types: ['bool', ['id']], implementation: function () { return true; }}}});",
+ "function run(argv) {",
+ "  var file = argv[0], name = argv[1], icon = argv[2], w = Number(argv[3]), h = Number(argv[4]);",
+ "  var app = $.NSApplication.sharedApplication;",
+ "  app.setActivationPolicy($.NSApplicationActivationPolicyRegular);",
+ "  var del = $.StudioDelegate.alloc.init;",
+ "  app.delegate = del;",
+ "  app.applicationIconImage = $.NSImage.alloc.initWithContentsOfFile(icon);",
+ "  var bar = $.NSMenu.alloc.init, top = $.NSMenuItem.alloc.init, sub = $.NSMenu.alloc.init;",
+ "  sub.addItem($.NSMenuItem.alloc.initWithTitleActionKeyEquivalent('Quit ' + name, 'terminate:', 'q'));",
+ "  top.submenu = sub; bar.addItem(top); app.mainMenu = bar;",
+ "  var mask = $.NSWindowStyleMaskTitled | $.NSWindowStyleMaskClosable | $.NSWindowStyleMaskMiniaturizable | $.NSWindowStyleMaskResizable;",
+ "  var win = $.NSWindow.alloc.initWithContentRectStyleMaskBackingDefer($.NSMakeRect(0, 0, w, h), mask, $.NSBackingStoreBuffered, false);",
+ "  var web = $.WKWebView.alloc.initWithFrameConfiguration(win.contentView.bounds, $.WKWebViewConfiguration.alloc.init);",
+ "  web.autoresizingMask = 18;",
+ "  win.contentView.addSubview(web);",
+ "  var url = $.NSURL.fileURLWithPath(file);",
+ "  web.loadFileURLAllowingReadAccessToURL(url, url.URLByDeletingLastPathComponent);",
+ "  win.title = name; win.center; win.makeKeyAndOrderFront(null);",
+ "  app.activateIgnoringOtherApps(true);",
+ "  app.run;",
+ "}"
+].join('\n');
+const lines76 = s => s.match(/.{1,76}/g).join('\n');
+async function nativePkg(plat, c){
+  const t = s => new TextEncoder().encode(s), nm = c.nm, html = await bundle(''), p512 = (await pngs([512]))[0][1];
+  if (plat === 'mac') {
+    const A = nm + '.app/Contents/', ic = await pngs([128, 256, 512]);
+    const plist = ['<?xml version="1.0" encoding="UTF-8"?>', '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">', '<plist version="1.0"><dict>',
+      '<key>CFBundleName</key><string>' + nm + '</string>', '<key>CFBundleDisplayName</key><string>' + nm + '</string>', '<key>CFBundleIdentifier</key><string>' + c.pkg + '</string>',
+      '<key>CFBundleVersion</key><string>' + c.V + '</string>', '<key>CFBundleShortVersionString</key><string>' + c.V + '</string>', '<key>CFBundleExecutable</key><string>launcher</string>',
+      '<key>CFBundleIconFile</key><string>icon</string>', '<key>CFBundlePackageType</key><string>APPL</string>', '<key>LSMinimumSystemVersion</key><string>10.13</string>',
+      '<key>NSHighResolutionCapable</key><true/>', '</dict></plist>', ''].join('\n');
+    const launcher = '#!/bin/sh\nD="$(cd "$(dirname "$0")/../Resources" && pwd)"\nexec /usr/bin/osascript -l JavaScript "$D/main.js" "$D/app/index.html" "' + nm + '" "$D/icon.png" ' + c.WW + ' ' + c.WH + '\n';
+    const E = [
+      {path:A + 'Info.plist', data:t(plist), mode:0o644}, {path:A + 'MacOS/launcher', data:t(launcher), mode:0o755}, {path:A + 'Resources/main.js', data:t(MAINJS), mode:0o644},
+      {path:A + 'Resources/icon.icns', data:new Uint8Array(await icnsBlob([['ic07', ic[0][1]], ['ic08', ic[1][1]], ['ic09', ic[2][1]]]).arrayBuffer()), mode:0o644},
+      {path:A + 'Resources/icon.png', data:p512, mode:0o644}, {path:A + 'Resources/app/index.html', data:t(html), mode:0o644}
+    ];
+    const vol = nm.toUpperCase().replace(/[^A-Z0-9_]/g, '_').slice(0, 32) || 'APP';
+    return {name:nm.replace(/ /g, '-') + '.dmg', blob:new Blob([isoBuild(E, vol)], {type:'application/x-apple-diskimage'})};
+  }
+  const z = new JSZip(); z.file('app/index.html', html); z.file('icon.png', p512);
+  if (plat === 'windows') {
+    z.file('icon.ico', await icoBlob(await pngs([16, 32, 48, 256])).arrayBuffer());
+    const b64 = await z.generateAsync({type:'base64', compression:'DEFLATE'});
+    const ps = [
+      "$ErrorActionPreference = 'Stop'", "$name = '" + nm + "'", "$id = '" + c.id + "'", "$b64 = '" + b64 + "'",
+      "try {",
+      "  $dir = Join-Path $env:LOCALAPPDATA $id",
+      "  New-Item -ItemType Directory -Force -Path $dir | Out-Null",
+      "  $zip = Join-Path $env:TEMP ($id + '.zip')",
+      "  [IO.File]::WriteAllBytes($zip, [Convert]::FromBase64String($b64))",
+      "  Expand-Archive -LiteralPath $zip -DestinationPath $dir -Force",
+      "  Remove-Item $zip",
+      "  $browser = @(\"${env:ProgramFiles(x86)}\\Microsoft\\Edge\\Application\\msedge.exe\", \"$env:ProgramFiles\\Microsoft\\Edge\\Application\\msedge.exe\", \"$env:ProgramFiles\\Google\\Chrome\\Application\\chrome.exe\", \"${env:ProgramFiles(x86)}\\Google\\Chrome\\Application\\chrome.exe\", \"$env:LOCALAPPDATA\\Google\\Chrome\\Application\\chrome.exe\") | Where-Object { Test-Path $_ } | Select-Object -First 1",
+      "  $page = Join-Path $dir 'app\\index.html'",
+      "  $uri = ([Uri]$page).AbsoluteUri",
+      "  $wsh = New-Object -ComObject WScript.Shell",
+      "  $desktop = [Environment]::GetFolderPath('Desktop')",
+      "  foreach ($loc in @($desktop, (Join-Path $env:APPDATA 'Microsoft\\Windows\\Start Menu\\Programs'))) {",
+      "    $s = $wsh.CreateShortcut((Join-Path $loc ($name + '.lnk')))",
+      "    if ($browser) { $s.TargetPath = $browser; $s.Arguments = \"--app=`\"$uri`\" --window-size=" + c.WW + "," + c.WH + "\" } else { $s.TargetPath = $page }",
+      "    $s.IconLocation = (Join-Path $dir 'icon.ico')",
+      "    $s.Save()",
+      "  }",
+      "  Write-Host ('Installed ' + $name + '. Its icon is on your Desktop and in the Start menu.')",
+      "  Start-Process (Join-Path $desktop ($name + '.lnk'))",
+      "  Start-Sleep -Seconds 2",
+      "} catch {",
+      "  Write-Host $_",
+      "  Read-Host 'Press Enter to close'",
+      "}"
+    ];
+    const bat = ['@echo off', 'set "SELF=%~f0"', 'powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((Get-Content -LiteralPath $env:SELF -Raw) -split (\'PSBEGIN\'+\'_MARK\'))[1]"', 'exit /b', 'PSBEGIN_MARK', ...ps, ''].join('\r\n');
+    return {name:nm.replace(/ /g, '-') + '-Setup.bat', blob:new Blob([bat], {type:'application/octet-stream'})};
+  }
+  z.file('run.sh', '#!/bin/sh\nF="$(dirname "$0")/app/index.html"\nfor b in google-chrome chromium chromium-browser microsoft-edge brave-browser; do\n  if command -v $b >/dev/null 2>&1; then exec $b --app="file://$F" --window-size=' + c.WW + ',' + c.WH + '; fi\ndone\nexec xdg-open "$F"\n');
+  const b64 = lines76(await z.generateAsync({type:'base64', compression:'DEFLATE'}));
+  const sh = ['#!/bin/sh', "NAME='" + nm + "'", "ID='" + c.id + "'", 'D="$HOME/.local/share/$ID"', 'mkdir -p "$D" "$HOME/.local/share/applications"', 'T="$(mktemp)"',
+    "sed '1,/^__PAYLOAD__$/d' \"$0\" | base64 -d > \"$T\"",
+    "if command -v python3 >/dev/null 2>&1; then python3 -c 'import sys,zipfile;zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' \"$T\" \"$D\"; else unzip -oq \"$T\" -d \"$D\"; fi",
+    'rm -f "$T"',
+    "printf '[Desktop Entry]\\nType=Application\\nName=%s\\nExec=sh \"%s/run.sh\"\\nIcon=%s/icon.png\\nTerminal=false\\nCategories=Utility;\\n' \"$NAME\" \"$D\" \"$D\" > \"$HOME/.local/share/applications/$ID.desktop\"",
+    'echo "Installed $NAME. Find it in your app menu."', 'sh "$D/run.sh" >/dev/null 2>&1 &', 'exit 0', '__PAYLOAD__', b64, ''].join('\n');
+  return {name:nm.replace(/ /g, '-') + '-install.sh', blob:new Blob([sh], {type:'application/x-sh'})};
+}
+function deliver(parent, r, n, b){
+  if (parent) { r.file(n, b); return; }
+  dl(n, b);
+  const how = {mac:'Open the .dmg and double-click the app inside (right-click, Open the first time), or drag it to Applications.', windows:'Double-click it. It installs the app, adds Desktop and Start menu icons, and opens it. If SmartScreen warns, choose More info, then Run anyway.', linux:'Run: sh ' + n + '   It adds the app to your app menu and opens it.', web:'Double-click it to open the app.'};
+  term('ok', '✔ Exported ' + n + '. ' + how[S.plat]);
+}
 renderResume();
 </script>
 </body>
