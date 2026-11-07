@@ -800,11 +800,11 @@ async function nativePkg(plat, c){
       'fallback() {', '  /usr/bin/osascript -e "display notification \\"Opened in your browser instead. See ~/Library/Logs/' + nm + '.log\\" with title \\"' + nm + '\\"" >/dev/null 2>&1',
       '  for a in "Google Chrome" "Microsoft Edge" "Brave Browser" "Chromium"; do', '    if [ -d "/Applications/$a.app" ] || [ -d "$HOME/Applications/$a.app" ]; then', '      open -na "$a" --args --app="$U" --window-size=' + c.WW + ',' + c.WH + ';', '      exit 0', '    fi', '  done', '  open "$P"', '  exit 0', '}',
       '/usr/bin/osascript -l JavaScript "$D/main.js" "$P" "' + nm + '" "$D/icon.png" ' + c.WW + ' ' + c.WH + ' >"$L" 2>&1 &', 'J=$!', 'sleep 3', 'if kill -0 $J 2>/dev/null; then wait $J; exit 0; fi', 'fallback', ''].join('\n');
-    const readme = 'HOW TO OPEN ' + nm.toUpperCase() + '\n\n1. Drag ' + nm + '.app to your Applications folder.\n2. Double-click it.\n3. If macOS blocks it: open System Settings > Privacy & Security, scroll down and click Open Anyway.\n   Or open Terminal and paste this one line:\n   xattr -cr "/Applications/' + nm + '.app" && open "/Applications/' + nm + '.app"\n\nStill stuck? Double-click ' + nm + '.html next to this file. It opens the app in your browser.\n';
+    const readme = 'HOW TO OPEN ' + nm.toUpperCase() + '\n\n1. Drag ' + nm + '.app to your Applications folder.\n2. Double-click it.\n3. If macOS blocks it: open System Settings > Privacy & Security, scroll down and click Open Anyway.\n   Or open Terminal, type xattr -cr and a space, drag the app from Finder into the Terminal window, and press Return.\n\nThe app page itself is at Contents/Resources/app/index.html. Double-click it to open the app in your browser.\n';
     const mz = new JSZip(), X = {unixPermissions:0o100755}, W = {unixPermissions:0o100644};
     mz.file(A + 'Info.plist', plist, W); mz.file(A + 'MacOS/launcher', launcher, X); mz.file(A + 'Resources/main.js', MAINJS, W);
     mz.file(A + 'Resources/icon.icns', await icnsBlob([['ic07', ic[0][1]], ['ic08', ic[1][1]], ['ic09', ic[2][1]]]).arrayBuffer(), W);
-    mz.file(A + 'Resources/icon.png', p512, W); mz.file(A + 'Resources/app/index.html', html, W); mz.file('README.txt', readme, W); mz.file(nm + '.html', html, W);
+    mz.file(A + 'Resources/icon.png', p512, W); mz.file(A + 'Resources/app/index.html', html, W); mz.file(A + 'Resources/README.txt', readme, W);
     const blob = await mz.generateAsync({type:'blob', platform:'UNIX', compression:'DEFLATE'});
     await verifyMac(blob, A);
     return {name:nm.replace(/ /g, '-') + '-mac.zip', blob};
@@ -863,7 +863,7 @@ async function nativePkg(plat, c){
 }
 const HK = 'appstudio.exports';
 const STEPS = {
-  mac: () => ['Find the zip in your Downloads folder. Safari unzips it for you; otherwise double-click it.', 'Drag the app into your Applications folder.', 'Double-click it. If macOS says it cannot verify the app, open System Settings, then Privacy & Security, scroll down and click Open Anyway.', 'Faster: copy the command below, paste it into Terminal and press Return.'],
+  mac: () => ['Find the zip in your Downloads folder. Safari unzips it for you; otherwise double-click it.', 'Drag the app itself (the icon with your logo, not a folder) into your Applications folder.', 'Double-click it. If macOS says it cannot verify the app, open System Settings, then Privacy & Security, scroll down and click Open Anyway.', 'Faster: copy the command below, paste it into Terminal and press Return. It finds the app wherever it is.'],
   windows: () => ['Double-click the .bat file.', 'If Windows SmartScreen appears, click More info, then Run anyway.', 'The app installs, adds icons to your Desktop and Start menu, and opens.', 'Next time, open it from the icon.'],
   linux: () => ['Open a terminal in the folder with the file.', 'Run the command below.', 'Find the app in your app menu or on your Desktop.'],
   web: () => ['Double-click the .html file. It opens in your browser.'],
@@ -872,7 +872,7 @@ const STEPS = {
   chromebook: () => ['Put the unzipped folder on GitHub Pages or any https host.', 'Open it in Chrome and click the install icon in the address bar.']
 };
 const HELP = {
-  mac: ['Opens as a folder or in an archive tool: that was the old .dmg. Export again to get a .zip with a real app inside.', 'Nothing happens on double-click: macOS is blocking an unverified app. Use System Settings, Privacy & Security, Open Anyway, or the Terminal command from the export window.', 'Your browser opens instead of a window: the native window could not start, so the app opened in a browser. Details are in ~/Library/Logs.', 'Always works: double-click the .html file inside the zip.'],
+  mac: ['xattr says No such file: the app is probably inside a folder, or its name is different. Use the Terminal command from the export window. It finds the app wherever it is. Or type xattr -cr and a space, then drag the app from Finder into Terminal.', 'Opens as a folder or in an archive tool: that was the old .dmg. Export again to get a .zip with a real app inside.', 'Nothing happens on double-click: macOS is blocking an unverified app. Use System Settings, Privacy & Security, Open Anyway, or the Terminal command from the export window.', 'Your browser opens instead of a window: the native window could not start, so the app opened in a browser. Details are in ~/Library/Logs.', 'Always works: export Website and double-click the .html file.'],
   windows: ['SmartScreen blocks it: click More info, then Run anyway.', 'Nothing seems to happen: look for the new icon on your Desktop and in the Start menu.', 'An error window appears: it names a log file in your Temp folder. Send me what it says.', 'Always works: export Website and double-click the .html file.'],
   linux: ['Permission denied: run it with sh, not by double-clicking.', 'No icon appears: log out and in, or run sh ~/.local/share/yourapp/run.sh.', 'Always works: export Website and open the .html file.'],
   web: ['The file opens as text: right-click it and choose Open With, then your browser.', 'The page is blank: type check in the terminal to find errors.'],
@@ -889,7 +889,7 @@ function logExport(n, size, h){
 }
 function howDialog(n, h){
   const nm = label(), st = (STEPS[S.plat] || STEPS.web)();
-  const cmd = S.plat === 'mac' ? 'xattr -cr "/Applications/' + nm + '.app" && open "/Applications/' + nm + '.app"' : S.plat === 'linux' ? 'sh ~/Downloads/' + n : '';
+  const cmd = S.plat === 'mac' ? 'find /Applications ~/Applications ~/Downloads -maxdepth 3 -name "' + nm + '.app" -exec xattr -cr {} \\; -exec open {} \\;' : S.plat === 'linux' ? 'sh ~/Downloads/' + n : '';
   $('#box').innerHTML = '<h3>' + n + ' is ready</h3><ol>' + st.map(x => '<li>' + x + '</li>').join('') + '</ol>' + (cmd ? '<pre>' + cmd + '</pre>' : '') + (h ? '<div class="tag">SHA-256 ' + h.slice(0, 24) + '…</div>' : '') +
     '<div class="row">' + (cmd ? '<button class="btn primary" id="cpc">Copy command</button>' : '') + '<button class="btn" id="opb">Test built app</button><button class="btn" id="hlp">Won\u2019t open?</button><button class="btn" id="fno">Done</button></div>';
   show();
