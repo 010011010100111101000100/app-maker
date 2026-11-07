@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App Studio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12102b;--panel:#1b1840;--panel2:#231f52;--line:#363070;--text:#eeecff;--dim:#9f9bd0;--a1:#ff5fa2;--a2:#7c5cff;--err:#ff8a9b;--warn:#ffd479;--ok:#6ee7b7;--info:#8ec5ff;--mono:"JetBrains Mono",Consolas,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{color:var(--text);font:14px/1.5 Sora,"Segoe UI",system-ui,sans-serif;background:radial-gradient(900px 520px at 88% -8%,#5b3be066,transparent),radial-gradient(760px 460px at -8% 108%,#ff5fa233,transparent),var(--bg)}
+button,input{font:inherit;color:inherit}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 13px;cursor:pointer;transition:border-color .15s,transform .15s}
+.btn:hover{border-color:var(--a2);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,var(--a1),var(--a2));border:0;font-weight:600;box-shadow:0 6px 20px #7c5cff55}
+:focus-visible{outline:2px solid var(--a1);outline-offset:2px}
+#picker{height:100%;overflow:auto}
+.wrap{max-width:980px;margin:0 auto;padding:64px 22px}
+.wrap h1{font:800 clamp(34px,6vw,60px)/1.05 Sora,sans-serif;letter-spacing:-.03em;margin:0 0 14px;max-width:11em}
+.wrap>p{color:var(--dim);font-size:16px;max-width:34em;margin:0 0 34px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.card{text-align:left;padding:20px;border-radius:18px;background:var(--panel);border:1px solid var(--line);cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s}
+.card:hover{transform:translateY(-4px);border-color:var(--a1);box-shadow:0 14px 34px #0006}
+.card i{font-style:normal;font-size:34px;display:block}
+.card b{display:block;font-size:17px;margin:10px 0 4px}
+.card span{color:var(--dim);font-size:12.5px;display:block}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+#studio{display:none;height:100%;grid-template-rows:60px 1fr}
+header{display:flex;align-items:center;gap:8px;padding:0 14px;margin:10px 10px 0;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+.brand{font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{color:var(--dim);font-size:12.5px;white-space:nowrap}
+header input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:6px 10px;width:150px}
+header .sp{flex:1}
+#logoimg{width:32px;height:32px;border-radius:9px;border:1px solid var(--line)}
+main{display:grid;grid-template-columns:190px 1fr 390px;grid-template-rows:1fr 190px;grid-template-areas:"files editor sim" "term term term";gap:10px;padding:10px;min-height:0}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;min-width:0;min-height:0}
+#files{grid-area:files;padding:10px;overflow:auto}
+#files .h{display:flex;justify-content:space-between;align-items:center;color:var(--dim);margin-bottom:8px}
+#files .h button{border:0;background:var(--panel2);border-radius:8px;width:26px;height:26px;cursor:pointer}
+.f{display:flex;justify-content:space-between;padding:6px 10px;border-radius:9px;cursor:pointer;font:13px var(--mono)}
+.f:hover{background:var(--panel2)}
+.f.on{background:linear-gradient(135deg,#ff5fa233,#7c5cff44)}
+.f button{border:0;background:none;padding:0 4px;color:var(--dim);cursor:pointer}
+#editor{grid-area:editor;display:flex;flex-direction:column}
+#tab{padding:9px 16px;color:var(--dim);font:12.5px var(--mono);border-bottom:1px solid var(--line);background:var(--panel2)}
+#code{flex:1;width:100%;resize:none;border:0;background:transparent;color:var(--text);padding:14px 16px;font:13px/1.65 var(--mono);tab-size:2;white-space:pre}
+#sim{grid-area:sim;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;background-image:radial-gradient(#ffffff14 1px,transparent 1px);background-size:18px 18px}
+.dev{position:relative;background:#fff;overflow:hidden;box-shadow:0 24px 60px #000a;display:flex;flex-direction:column}
+.dev.phone{width:270px;height:550px;border-radius:40px;border:9px solid #07061a}
+.dev.phone::before{content:"";position:absolute;top:0;left:50%;width:84px;height:20px;margin-left:-42px;background:#07061a;border-radius:0 0 14px 14px;z-index:2}
+.dev.desk{width:100%;max-width:360px;height:280px;border-radius:12px;border:1px solid var(--line)}
+.tb{display:none;height:28px;background:var(--panel2);align-items:center;gap:6px;padding:0 10px;color:var(--dim);font-size:11px}
+.desk .tb{display:flex}
+.tb i{width:9px;height:9px;border-radius:50%;background:#ff5f57}
+.tb i:nth-child(2){background:#febc2e}
+.tb i:nth-child(3){background:#28c840}
+.dev iframe{flex:1;width:100%;border:0;background:#fff}
+#term{grid-area:term;display:flex;flex-direction:column;background:#0b0a1e}
+#term .bar{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;color:var(--dim);background:var(--panel2)}
+#term .bar button{padding:2px 10px;font-size:12px}
+#log{flex:1;overflow:auto;padding:8px 14px;font:12.5px/1.55 var(--mono)}
+#log div{white-space:pre-wrap}
+.error{color:var(--err)}.warn{color:var(--warn)}.info{color:var(--info)}.ok{color:var(--ok)}.log{color:var(--text)}
+#cmd{border:0;border-top:1px solid var(--line);background:#0b0a1e;padding:8px 14px;font:12.5px var(--mono);width:100%}
+@media(max-width:900px){
+ #studio{height:auto;min-height:100%;grid-template-rows:auto 1fr}
+ header{flex-wrap:wrap;padding:10px 14px}
+ main{grid-template-columns:1fr;grid-template-rows:auto 320px 600px 190px;grid-template-areas:"files" "editor" "sim" "term"}
+}
+</style>
+</head>
+<body>
+
+<section id="picker">
+  <div class="wrap">
+    <h1>Build an app for any device.</h1>
+    <p>Pick where it will run. The studio adds the icon, window setup and launch files, so all you write is what your app does.</p>
+    <div class="cards" id="cards"></div>
+    <div class="row" id="resume"></div>
+  </div>
+</section>
+
+<section id="studio">
+  <header>
+    <b class="brand">App Studio</b><span class="tag" id="platTag"></span>
+    <input type="text" id="appName" value="My App" aria-label="App name">
+    <img id="logoimg" alt="App logo">
+    <button class="btn" id="upBtn">Upload logo</button>
+    <span class="sp"></span>
+    <span class="tag" id="saved"></span>
+    <button class="btn" id="openBtn">Open project</button>
+    <button class="btn" id="saveBtn">Save project</button>
+    <button class="btn" id="swBtn">Change device</button>
+    <button class="btn" id="runBtn">Run</button>
+    <button class="btn primary" id="expBtn">Export app</button>
+  </header>
+  <main>
+    <aside class="pane" id="files"></aside>
+    <div class="pane" id="editor"><div id="tab"></div><textarea id="code" spellcheck="false" aria-label="Code editor"></textarea></div>
+    <div class="pane" id="sim"><div class="tag" id="simLbl"></div><div class="dev" id="dev"><div class="tb"><i></i><i></i><i></i><span id="tbn"></span></div><iframe id="frame" sandbox="allow-scripts" title="App simulator"></iframe></div></div>
+    <div class="pane" id="term">
+      <div class="bar"><span>Terminal</span><button class="btn" id="clrBtn">Clear</button></div>
+      <div id="log"></div>
+      <input id="cmd" placeholder="help, run, export, save, files, or any JavaScript to test in the simulator" autocomplete="off" aria-label="Terminal input">
+    </div>
+  </main>
+  <input type="file" id="upFile" accept="image/*" hidden>
+  <input type="file" id="prjFile" accept=".appstudio,.json" hidden>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const KEY = 'appstudio.project';
+const P = {
+  android:{n:'Android', i:'📱', t:'phone', d:'Phones and tablets. Exports an Android Studio project.'},
+  ios:{n:'iPhone & iPad', i:'🍎', t:'phone', d:'Installable web app for Add to Home Screen.'},
+  chromebook:{n:'Chromebook', i:'💻', t:'desk', d:'Installable app that opens in its own window.'},
+  mac:{n:'Mac', i:'🖥️', t:'desk', d:'Double-click launcher plus an Electron project.'},
+  windows:{n:'Windows', i:'🪟', t:'desk', d:'Double-click launcher plus an Electron project.'},
+  linux:{n:'Linux', i:'🐧', t:'desk', d:'Double-click launcher plus an Electron project.'},
+  web:{n:'Website', i:'🌐', t:'desk', d:'One self-contained page that opens anywhere.'}
+};
+const START = {
+ 'index.html':'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width,initial-scale=1">\n  <title>My App</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <main>\n    <h1>Hello!</h1>\n    <button id="btn">Tap me</button>\n    <p id="out"></p>\n  </main>\n  <script src="app.js"><\/script>\n</body>\n</html>',
+ 'style.css':'body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fb;color:#1c2033}\nmain{display:grid;place-items:center;gap:12px;min-height:100vh;text-align:center}\nbutton{padding:12px 22px;border:0;border-radius:12px;background:#4f46e5;color:#fff;font-size:16px}',
+ 'app.js':'let taps = 0;\ndocument.getElementById("btn").addEventListener("click", () => {\n  taps++;\n  document.getElementById("out").textContent = "Taps: " + taps;\n  console.log("Tapped " + taps + " times");\n});'
+};
+let S = {plat:null, files:{}, active:'index.html', logo:null, name:'My App'};
+let timer;
+
+$('#cards').innerHTML = Object.entries(P).map(([k,p]) =>
+  `<button class="card" data-k="${k}"><i>${p.i}</i><b>${p.n}</b><span>${p.d}</span></button>`).join('');
+$('#cards').onclick = e => { const b = e.target.closest('.card'); if (b) pick(b.dataset.k); };
+
+function renderResume(){
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  $('#resume').innerHTML = (saved && saved.files && P[saved.plat] ? '<button class="btn primary" id="contBtn">Continue ' + saved.name.replace(/[<>&]/g,'') + '</button>' : '') + '<button class="btn" id="openBtn2">Open a project file</button>';
+  if ($('#contBtn')) $('#contBtn').onclick = () => loadProject(saved);
+  $('#openBtn2').onclick = () => $('#prjFile').click();
+}
+
+function pick(k){
+  S.plat = k;
+  if (!Object.keys(S.files).length) S.files = {...START};
+  $('#picker').style.display = 'none';
+  $('#studio').style.display = 'grid';
+  $('#platTag').textContent = P[k].n;
+  $('#simLbl').textContent = P[k].n + ' simulator';
+  $('#dev').className = 'dev ' + P[k].t;
+  $('#tbn').textContent = S.name;
+  term('info', 'Studio ready for ' + P[k].n + '. Type help for commands.');
+  renderFiles(); openFile(S.files[S.active] !== undefined ? S.active : 'index.html'); updateLogo(); run(); persist();
+}
+$('#swBtn').onclick = () => { $('#studio').style.display = 'none'; $('#picker').style.display = 'block'; renderResume(); };
+
+function snap(){ return {v:1, plat:S.plat, name:S.name, logo:S.logo, files:S.files, active:S.active}; }
+function persist(){
+  try { localStorage.setItem(KEY, JSON.stringify(snap())); $('#saved').textContent = 'Saved ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+  catch (e) { $('#saved').textContent = 'Not saved'; }
+}
+function loadProject(p){
+  if (!p || !p.files || typeof p.files !== 'object' || !P[p.plat]) throw new Error('This is not a valid App Studio project.');
+  S = {plat:p.plat, files:p.files, active:p.active, logo:p.logo || null, name:p.name || 'My App'};
+  $('#appName').value = S.name;
+  pick(S.plat);
+  term('ok', 'Opened project ' + S.name);
+}
+function saveProject(){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(snap())], {type:'application/json'}));
+  a.download = slug() + '.appstudio'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  term('ok', 'Project saved as ' + slug() + '.appstudio. Open it later to keep editing.');
+}
+$('#saveBtn').onclick = saveProject;
+$('#openBtn').onclick = () => $('#prjFile').click();
+$('#prjFile').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { try { loadProject(JSON.parse(r.result)); } catch (x) { term('error', 'Could not open project: ' + x.message); alert('Could not open that file. ' + x.message); } };
+  r.readAsText(f); e.target.value = '';
+};
+
+function renderFiles(){
+  $('#files').innerHTML = '<div class="h"><span>Files</span><button id="addF" title="New file">+</button></div>' +
+    Object.keys(S.files).map(f => `<div class="f ${f===S.active?'on':''}" data-f="${f}"><span>${f}</span>${f==='index.html'?'':'<button data-del="'+f+'" title="Delete">×</button>'}</div>`).join('');
+}
+function openFile(f){ S.active = f; $('#code').value = S.files[f] ?? ''; $('#tab').textContent = f; renderFiles(); }
+$('#files').onclick = e => {
+  if (e.target.id === 'addF') {
+    const n = (prompt('File name (for example utils.js or extra.css):') || '').trim();
+    if (!n) return;
+    if (!/^[\w\-.\/]+\.(html|css|js|json|txt|svg)$/i.test(n)) return term('error', 'Invalid name. Use letters, numbers, dashes and one of: .html .css .js .json .txt .svg');
+    if (S.files[n] !== undefined) return term('warn', n + ' already exists.');
+    S.files[n] = ''; openFile(n); persist(); term('ok', 'Created ' + n);
+  } else if (e.target.dataset.del) {
+    const f = e.target.dataset.del;
+    if (confirm('Delete ' + f + '?')) { delete S.files[f]; term('warn', 'Deleted ' + f); openFile('index.html'); persist(); run(); }
+  } else if (e.target.closest('.f')) openFile(e.target.closest('.f').dataset.f);
+};
+$('#code').addEventListener('input', () => { S.files[S.active] = $('#code').value; persist(); clearTimeout(timer); timer = setTimeout(run, 900); });
+$('#code').addEventListener('keydown', e => {
+  if (e.key === 'Tab') { e.preventDefault(); const t = e.target; t.setRangeText('  ', t.selectionStart, t.selectionEnd, 'end'); t.dispatchEvent(new Event('input')); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveProject(); }
+});
+
+function defaultLogo(){
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const x = c.getContext('2d'), g = x.createLinearGradient(0,0,512,512);
+  g.addColorStop(0,'#ff5fa2'); g.addColorStop(1,'#7c5cff'); x.fillStyle = g; x.fillRect(0,0,512,512);
+  x.fillStyle = '#fff'; x.font = 'bold 300px Georgia,serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText((S.name.trim()[0] || 'A').toUpperCase(), 256, 280);
+  return c.toDataURL('image/png');
+}
+function updateLogo(){ $('#logoimg').src = S.logo || defaultLogo(); }
+$('#appName').oninput = e => { S.name = e.target.value || 'My App'; $('#tbn').textContent = S.name; if (!S.logo) updateLogo(); persist(); };
+$('#upBtn').onclick = () => $('#upFile').click();
+$('#upFile').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { S.logo = r.result; updateLogo(); persist(); term('ok', 'Logo set. It is resized into every icon the ' + P[S.plat].n + ' app needs.'); };
+  r.readAsDataURL(f); e.target.value = '';
+};
+function loadImg(u){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Logo image could not be read')); i.src = u; }); }
+async function draw(size){
+  const i = await loadImg(S.logo || defaultLogo()), c = document.createElement('canvas'), s = Math.min(i.width, i.height);
+  c.width = c.height = size;
+  c.getContext('2d').drawImage(i, (i.width-s)/2, (i.height-s)/2, s, s, 0, 0, size, size);
+  return c;
+}
+async function icon(size){ const c = await draw(size); return new Promise(r => c.toBlob(r, 'image/png')); }
+
+const BRIDGE = '<script>(function(){var s=function(t,a){parent.postMessage({studio:1,t:t,m:a.map(function(x){try{return typeof x==="string"?x:(x&&x.stack)||JSON.stringify(x)}catch(e){return String(x)}}).join(" ")},"*")};["log","warn","error"].forEach(function(k){var o=console[k];console[k]=function(){var a=[].slice.call(arguments);s(k,a);o.apply(console,a)}});onerror=function(m,u,l){s("error",[m+" (line "+l+")"])};onunhandledrejection=function(e){s("error",["Unhandled promise: "+e.reason])};addEventListener("message",function(e){if(e.data&&e.data.ev){try{s("log",["← "+(0,eval)(e.data.ev)])}catch(x){s("error",[x])}}})})()<\/script>';
+
+function inline(){
+  const F = S.files;
+  return F['index.html']
+    .replace(/<link[^>]*href=["']([^"']+)["'][^>]*>/gi, (m, f) => F[f] !== undefined ? '<style>' + F[f] + '</style>' : m)
+    .replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (m, f) => F[f] !== undefined ? '<script>' + F[f].replace(/<\/script/gi, '<\\/script') + '<\/script>' : m);
+}
+function run(){
+  clearTimeout(timer);
+  const F = S.files;
+  if (F['index.html'] === undefined) return term('error', 'index.html is missing. Every app needs one.');
+  let ok = true;
+  for (const f in F) if (f.endsWith('.js')) { try { new Function(F[f]); } catch (e) { ok = false; term('error', f + ': ' + e.message); } }
+  for (const f in F) if (f.endsWith('.json')) { try { JSON.parse(F[f] || '{}'); } catch (e) { ok = false; term('error', f + ': invalid JSON. ' + e.message); } }
+  F['index.html'].replace(/(?:src|href)=["']([^"':#?]+)["']/g, (m, f) => { if (F[f] === undefined) term('warn', 'index.html points to ' + f + ' but that file does not exist.'); });
+  let h = inline();
+  h = /<head[^>]*>/i.test(h) ? h.replace(/<head[^>]*>/i, m => m + BRIDGE) : BRIDGE + h;
+  $('#frame').srcdoc = h;
+  if (ok) term('info', '▶ Ran at ' + new Date().toLocaleTimeString());
+}
+addEventListener('message', e => { if (e.source === $('#frame').contentWindow && e.data && e.data.studio) term(e.data.t, e.data.m); });
+$('#runBtn').onclick = run;
+
+function term(type, msg){
+  const d = document.createElement('div'); d.className = type; d.textContent = msg;
+  $('#log').appendChild(d); $('#log').scrollTop = 1e9;
+}
+$('#clrBtn').onclick = () => $('#log').innerHTML = '';
+$('#cmd').onkeydown = e => {
+  if (e.key !== 'Enter') return;
+  const v = e.target.value.trim(); e.target.value = ''; if (!v) return;
+  term('log', '> ' + v);
+  if (v === 'help') term('info', 'run: restart the simulator\nexport: download the app\nsave: download the project file\nfiles: list project files\nclear: clear this terminal\nanything else runs as JavaScript inside the running app');
+  else if (v === 'run') run();
+  else if (v === 'export') exportApp();
+  else if (v === 'save') saveProject();
+  else if (v === 'clear') $('#log').innerHTML = '';
+  else if (v === 'files') term('log', Object.keys(S.files).join('\n'));
+  else $('#frame').contentWindow.postMessage({ev: v}, '*');
+};
+
+const slug = () => S.name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app';
+const label = () => S.name.replace(/[^\w ]/g, '').trim() || 'App';
+
+async function bundle(extra){
+  const d = (await draw(64)).toDataURL('image/png');
+  const tags = extra + '<link rel="icon" href="' + d + '">';
+  const h = inline();
+  return /<\/head>/i.test(h) ? h.replace(/<\/head>/i, tags + '</head>') : tags + h;
+}
+
+async function exportApp(){
+  if (S.files['index.html'] === undefined) return term('error', 'Export stopped: index.html is missing.');
+  term('info', 'Building ' + P[S.plat].n + ' app…');
+  try {
+    const id = slug(), pkg = 'com.studio.' + id, z = new JSZip(), r = z.folder(id + '-' + S.plat);
+    const put = (p, c, o) => r.file(p, c, o);
+    if (!S.logo) term('warn', 'No logo uploaded. A default letter icon will be used.');
+
+    if (S.plat === 'android') {
+      put('settings.gradle', 'pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }\ndependencyResolutionManagement { repositories { google(); mavenCentral() } }\nrootProject.name = "' + label() + '"\ninclude ":app"\n');
+      put('build.gradle', "plugins {\n  id 'com.android.application' version '8.5.2' apply false\n  id 'org.jetbrains.kotlin.android' version '1.9.24' apply false\n}\n");
+      put('gradle.properties', 'org.gradle.jvmargs=-Xmx2g\nandroid.useAndroidX=true\n');
+      put('app/build.gradle', "plugins {\n  id 'com.android.application'\n  id 'org.jetbrains.kotlin.android'\n}\nandroid {\n  namespace '" + pkg + "'\n  compileSdk 34\n  defaultConfig {\n    applicationId '" + pkg + "'\n    minSdk 24\n    targetSdk 34\n    versionCode 1\n    versionName '1.0'\n  }\n  kotlinOptions { jvmTarget = '17' }\n  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }\n}\n");
+      put('app/src/main/AndroidManifest.xml', '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n  <uses-permission android:name="android.permission.INTERNET"/>\n  <application android:label="' + label() + '" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.DeviceDefault.NoActionBar">\n    <activity android:name=".MainActivity" android:exported="true">\n      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>\n    </activity>\n  </application>\n</manifest>\n');
+      put('app/src/main/java/com/studio/' + id + '/MainActivity.kt', 'package ' + pkg + '\n\nimport android.app.Activity\nimport android.os.Bundle\nimport android.webkit.WebView\nimport android.webkit.WebViewClient\n\nclass MainActivity : Activity() {\n  private lateinit var web: WebView\n  override fun onCreate(b: Bundle?) {\n    super.onCreate(b)\n    web = WebView(this)\n    web.settings.javaScriptEnabled = true\n    web.settings.domStorageEnabled = true\n    web.webViewClient = WebViewClient()\n    web.loadUrl("file:///android_asset/www/index.html")\n    setContentView(web)\n  }\n  @Deprecated("Back goes to the previous page first")\n  override fun onBackPressed() { if (web.canGoBack()) web.goBack() else super.onBackPressed() }\n}\n');
+      Object.keys(S.files).forEach(f => put('app/src/main/assets/www/' + f, S.files[f]));
+      for (const [d, s] of [['mdpi',48],['hdpi',72],['xhdpi',96],['xxhdpi',144],['xxxhdpi',192]]) put('app/src/main/res/mipmap-' + d + '/ic_launcher.png', await icon(s));
+      put('README.md', '# ' + S.name + ' (Android)\n\n1. Install Android Studio.\n2. Choose File > Open and pick this folder. Let Gradle sync.\n3. Plug in a phone or start an emulator, then press Run.\n\nThe app installs with your logo as its icon. Tap the icon to open it.\n');
+    }
+
+    if (S.plat === 'web' || S.plat === 'ios' || S.plat === 'chromebook') {
+      const ios = '<link rel="apple-touch-icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="' + label() + '">';
+      const pwa = '<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#7c5cff">' + ios + '<script>try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}<\/script>';
+      put('index.html', await bundle(pwa));
+      put('manifest.webmanifest', JSON.stringify({name:S.name, short_name:S.name.slice(0,12), start_url:'./index.html', display:'standalone', background_color:'#ffffff', theme_color:'#7c5cff', icons:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]}, null, 2));
+      put('sw.js', 'const C="v1",F=' + JSON.stringify(['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png']) + ';\nself.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F))));\nself.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(x=>x||fetch(e.request))));\n');
+      put('icons/icon-192.png', await icon(192)); put('icons/icon-512.png', await icon(512));
+      const how = {web:'Double-click index.html. It opens right away in your browser.', chromebook:'Double-click index.html in the Files app to open it in Chrome. To install it, host the folder on GitHub Pages, open the page in Chrome and click the install icon in the address bar.', ios:'Host the folder on GitHub Pages and open the page in Safari. Tap Share, then Add to Home Screen. The app gets your logo and opens full screen.'};
+      put('README.md', '# ' + S.name + ' (' + P[S.plat].n + ')\n\n' + how[S.plat] + '\n');
+    }
+
+    if (S.plat === 'mac' || S.plat === 'windows' || S.plat === 'linux') {
+      const mac = S.plat === 'mac', win = S.plat === 'windows', nm = label();
+      put('app/index.html', await bundle(''));
+      put('package.json', JSON.stringify({name:id, productName:S.name, version:'1.0.0', main:'main.js', scripts:{start:'electron .', build:'electron-builder'}, devDependencies:{electron:'^31.0.0','electron-builder':'^24.13.3'}, build:{appId:pkg, productName:S.name, files:['main.js','app/**','icon.png'], icon:'icon.png', [mac?'mac':win?'win':'linux']:{target:mac?'dmg':win?'nsis':'AppImage'}}}, null, 2));
+      put('main.js', 'const { app, BrowserWindow } = require("electron");\nconst path = require("path");\nfunction createWindow() {\n  const win = new BrowserWindow({ width: 1000, height: 700, title: ' + JSON.stringify(S.name) + ', icon: path.join(__dirname, "icon.png") });\n  win.setMenuBarVisibility(false);\n  win.loadFile(path.join(__dirname, "app", "index.html"));\n}\napp.whenReady().then(createWindow);\napp.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });\napp.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });\n');
+      put('icon.png', await icon(512));
+      if (win) put('Open ' + nm + '.bat', ['@echo off', 'set "F=%~dp0app\\index.html"', 'start "" msedge --app="%F%" || start "" chrome --app="%F%" || start "" "%F%"', ''].join('\r\n'));
+      if (mac) put('Open ' + nm + '.command', '#!/bin/bash\ncd "$(dirname "$0")"\nF="$PWD/app/index.html"\nif [ -d "/Applications/Google Chrome.app" ]; then\n  open -na "Google Chrome" --args --app="file://$F"\nelif [ -d "/Applications/Microsoft Edge.app" ]; then\n  open -na "Microsoft Edge" --args --app="file://$F"\nelse\n  open "$F"\nfi\n', {unixPermissions:'755'});
+      if (S.plat === 'linux') put('Open ' + nm + '.sh', '#!/bin/sh\ncd "$(dirname "$0")"\nF="$PWD/app/index.html"\nfor b in google-chrome chromium chromium-browser microsoft-edge; do\n  if command -v $b >/dev/null 2>&1; then exec $b --app="file://$F"; fi\ndone\nexec xdg-open "$F"\n', {unixPermissions:'755'});
+      put('README.md', '# ' + S.name + ' (' + P[S.plat].n + ')\n\nDouble-click "Open ' + nm + '.' + (win ? 'bat' : mac ? 'command' : 'sh') + '" to launch the app in its own window.\n' + (mac ? '\nThe first time, right-click the file and choose Open so macOS allows it.\n' : '') + (S.plat === 'linux' ? '\nIf it does not start, mark the file as executable in its Properties.\n' : '') + '\nWant a real installed app with your logo as its icon?\n1. Install Node.js from nodejs.org.\n2. Run `npm install`, then `npm run build`.\n3. Your installer is in the `dist` folder.\n');
+    }
+
+    const blob = await z.generateAsync({type:'blob', platform:'UNIX'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = id + '-' + S.plat + '.zip'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    term('ok', '✔ Exported ' + id + '-' + S.plat + '.zip. Unzip it and read README.md for the one-step launch.');
+  } catch (e) { term('error', 'Export failed: ' + e.message); }
+}
+$('#expBtn').onclick = exportApp;
+addEventListener('load', () => { if (typeof JSZip === 'undefined') alert('JSZip failed to load. Check your connection; export needs it.'); });
+renderResume();
+</script>
+</body>
+</html>
